@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Flitesys.GeographicLib" Version="1.0.2" />
+    <PackageReference Include="MavLink4Net.Messages.Serialization" Version="0.4.0" />
+    <PackageReference Include="RosbridgeNet.RosbridgeClient.ProtocolV2" Version="1.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\ros-sharp-UWP\Libraries\RosBridgeClientLibStd\RosBridgeClientLibStd.csproj" />
+  </ItemGroup>
+
+</Project>
