@@ -98,7 +98,18 @@ namespace TTMobileClient.Views
             try
             {
                 // create map
-                _map = new Map(
+                /*_map = new Map(
+                    MapSpan.FromCenterAndRadius(
+                        new Position(47.6062, -122.3321), Distance.FromMiles(0.3)))
+                {
+                    IsShowingUser = true,
+                    HeightRequest = 100,
+                    WidthRequest = 960,
+                    VerticalOptions = LayoutOptions.FillAndExpand
+                };*/
+
+                // create map
+                _map = new CustomMap(
                     MapSpan.FromCenterAndRadius(
                         new Position(47.6062, -122.3321), Distance.FromMiles(0.3)))
                 {
