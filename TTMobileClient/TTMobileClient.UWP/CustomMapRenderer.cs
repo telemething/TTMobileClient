@@ -9,6 +9,7 @@ using TTMobileClient;
 using TTMobileClient.UWP;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using Windows.Devices.Geolocation;
 using Windows.Storage.Streams;
@@ -26,6 +27,36 @@ namespace TTMobileClient.UWP
         List<CustomPin> customPins;
         XamarinMapOverlay mapOverlay;
         bool xamarinOverlayShown = false;
+
+        protected override void OnElementPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            base.OnElementPropertyChanged(sender, e);
+
+            var ff = sender;
+            var tt = e;
+
+            if (e.PropertyName.Equals("RouteCoordinates"))
+            {
+                var formsMap = (CustomMap)sender;
+                nativeMap = Control as MapControl;
+
+                if (0 != formsMap.RouteCoordinates.Count())
+                {
+                    var coordinates = new List<BasicGeoposition>();
+                    foreach (var position in formsMap.RouteCoordinates)
+                    {
+                        coordinates.Add(new BasicGeoposition()
+                            { Latitude = position.Latitude, Longitude = position.Longitude });
+                    }
+
+                    var polyline = new MapPolyline();
+                    polyline.StrokeColor = Windows.UI.Color.FromArgb(128, 255, 0, 0);
+                    polyline.StrokeThickness = 5;
+                    polyline.Path = new Geopath(coordinates);
+                    nativeMap.MapElements.Add(polyline);
+                }
+            }
+        }
 
         protected override void OnElementChanged(ElementChangedEventArgs<Map> e)
         {
@@ -48,6 +79,7 @@ namespace TTMobileClient.UWP
                 nativeMap.Children.Clear();
                 nativeMap.MapElementClick += OnMapElementClick;
 
+                // Pins
                 foreach (var pin in customPins)
                 {
                     var snPosition = new BasicGeoposition { Latitude = pin.Position.Latitude, Longitude = pin.Position.Longitude };
@@ -60,6 +92,23 @@ namespace TTMobileClient.UWP
                     mapIcon.NormalizedAnchorPoint = new Windows.Foundation.Point(0.5, 1.0);
 
                     nativeMap.MapElements.Add(mapIcon);
+                }
+
+                // Polyline
+                if (0 != formsMap.RouteCoordinates.Count())
+                {
+                    var coordinates = new List<BasicGeoposition>();
+                    foreach (var position in formsMap.RouteCoordinates)
+                    {
+                        coordinates.Add(new BasicGeoposition()
+                            {Latitude = position.Latitude, Longitude = position.Longitude});
+                    }
+
+                    var polyline = new MapPolyline();
+                    polyline.StrokeColor = Windows.UI.Color.FromArgb(128, 255, 0, 0);
+                    polyline.StrokeThickness = 5;
+                    polyline.Path = new Geopath(coordinates);
+                    nativeMap.MapElements.Add(polyline);
                 }
             }
         }

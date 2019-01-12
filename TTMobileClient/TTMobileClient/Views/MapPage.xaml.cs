@@ -153,9 +153,11 @@ namespace TTMobileClient.Views
                 stack.Children.Add(buttons);
                 Content = stack;
 
-        //ShowCurrentPositionOnMap();
+         //ShowCurrentPositionOnMap();
 
-        DropCustomPin();
+         //TestDropCustomPin();
+
+         TestDrawPolyline();
 
                 return true;
             }
@@ -585,11 +587,54 @@ namespace TTMobileClient.Views
             _map.CustomPins = new List<CustomPin> { pin };
         }
 
-        private void DropCustomPin()
+        private void TestDropCustomPin()
         {
             _map.Pins.Add(_map.CustomPins.First());
-            _map.MoveToRegion(MapSpan.FromCenterAndRadius(
-                new Position(37.79752, -122.40183), Distance.FromMiles(1.0)));
+            //_map.MoveToRegion(MapSpan.FromCenterAndRadius(
+            //    new Position(37.79752, -122.40183), Distance.FromMiles(1.0)));
+        }
+
+        private void TestDrawPolyline()
+        {
+            /*_map.RouteCoordinates.Add(new Position(37.797534, -122.401827));
+            _map.RouteCoordinates.Add(new Position(37.797510, -122.402060));
+            _map.RouteCoordinates.Add(new Position(37.790269, -122.400589));
+            _map.RouteCoordinates.Add(new Position(37.790265, -122.400474));
+            _map.RouteCoordinates.Add(new Position(37.790228, -122.400391));
+            _map.RouteCoordinates.Add(new Position(37.790126, -122.400360));
+            _map.RouteCoordinates.Add(new Position(37.789250, -122.401451));
+            _map.RouteCoordinates.Add(new Position(37.788440, -122.400396));
+            _map.RouteCoordinates.Add(new Position(37.787999, -122.399780));
+            _map.RouteCoordinates.Add(new Position(37.786736, -122.398202));
+            _map.RouteCoordinates.Add(new Position(37.786345, -122.397722));
+            _map.RouteCoordinates.Add(new Position(37.785983, -122.397295));
+            _map.RouteCoordinates.Add(new Position(37.785559, -122.396728));
+            _map.RouteCoordinates.Add(new Position(37.780624, -122.390541));
+            _map.RouteCoordinates.Add(new Position(37.777113, -122.394983));
+            _map.RouteCoordinates.Add(new Position(37.776831, -122.394627));*/
+
+            _map.RouteCoordinates = new List<Position>()
+            {
+                new Position(37.797534, -122.401827),
+                new Position(37.797510, -122.402060),
+                new Position(37.790269, -122.400589),
+                new Position(37.790265, -122.400474),
+                new Position(37.790228, -122.400391),
+                new Position(37.790126, -122.400360),
+                new Position(37.789250, -122.401451),
+                new Position(37.788440, -122.400396),
+                new Position(37.787999, -122.399780),
+                new Position(37.786736, -122.398202),
+                new Position(37.786345, -122.397722),
+                new Position(37.785983, -122.397295),
+                new Position(37.785559, -122.396728),
+                new Position(37.780624, -122.390541),
+                new Position(37.777113, -122.394983),
+                new Position(37.776831, -122.394627)
+        };
+
+            //_map.MoveToRegion(MapSpan.FromCenterAndRadius(
+            //    new Position(37.79752, -122.40183), Distance.FromMiles(1.0)));
         }
     }
 }

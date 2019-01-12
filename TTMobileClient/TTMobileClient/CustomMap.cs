@@ -12,10 +12,25 @@ namespace TTMobileClient
 
     public class CustomMap : Map
     {
-        public CustomMap(MapSpan region) : base(region)
+        public List<Position> routeCoordinates;
+        public List<CustomPin> customPins;
+
+        public List<CustomPin> CustomPins
         {
+            get { return customPins; }
+            set { customPins = value; OnPropertyChanged(); }
         }
 
-        public List<CustomPin> CustomPins { get; set; }
+        public List<Position> RouteCoordinates
+        {
+            get { return routeCoordinates; }
+            set { routeCoordinates = value; OnPropertyChanged(); }
+        }
+
+       public CustomMap(MapSpan region) : base(region)
+       {
+           CustomPins = new List<CustomPin>();
+           routeCoordinates = new List<Position>();
+        }
     }
 }

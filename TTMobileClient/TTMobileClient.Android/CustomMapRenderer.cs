@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using Android.App;
 using Android.Content;
 using Android.OS;
@@ -20,9 +21,22 @@ namespace TTMobileClient.Droid
     public class CustomMapRenderer : MapRenderer, GoogleMap.IInfoWindowAdapter
     {
         List<CustomPin> customPins;
+        List<Position> routeCoordinates;
 
         public CustomMapRenderer(Context context) : base(context)
         {
+        }
+
+        protected override void OnElementPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            base.OnElementPropertyChanged(sender, e);
+
+            if (e.PropertyName.Equals("RouteCoordinates"))
+            {
+                var formsMap = (CustomMap)sender;
+                routeCoordinates = formsMap.RouteCoordinates;
+                Control.GetMapAsync(this);
+            }
         }
 
         protected override void OnElementChanged(Xamarin.Forms.Platform.Android.ElementChangedEventArgs<Map> e)
@@ -48,6 +62,19 @@ namespace TTMobileClient.Droid
 
             NativeMap.InfoWindowClick += OnInfoWindowClick;
             NativeMap.SetInfoWindowAdapter(this);
+
+            if( null != routeCoordinates)
+            if(0 < routeCoordinates.Count)
+            {
+                var polylineOptions = new PolylineOptions();
+                polylineOptions.InvokeColor(0x66FF0000);
+
+                foreach (var position in routeCoordinates)
+                    polylineOptions.Add(new LatLng(position.Latitude, position.Longitude));
+
+                routeCoordinates.Clear();
+                NativeMap.AddPolyline(polylineOptions);
+            }
         }
 
         protected override MarkerOptions CreateMarker(Pin pin)
