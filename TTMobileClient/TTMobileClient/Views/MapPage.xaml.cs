@@ -36,7 +36,8 @@ namespace TTMobileClient.Views
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class MapPage : ContentPage
     {
-        private Map _map;
+        //private Map _map;
+        private CustomMap _map;
         private Plugin.Geolocator.Abstractions.Position _myPosition;
         private Timer _heartbeatTimer;
         // missing AzureIotLib
@@ -119,6 +120,8 @@ namespace TTMobileClient.Views
                     VerticalOptions = LayoutOptions.FillAndExpand
                 };
 
+                BuildCustomPins();
+
                 // create map style buttons
                 var street = new Button { Text = "Street" };
                 var hybrid = new Button { Text = "Hybrid" };
@@ -135,7 +138,7 @@ namespace TTMobileClient.Views
                 StatusAltLabel = new Label { Text = "---" };
                 StatusLandedLabel = new Label { Text = "---" };
 
-        var buttons = new StackLayout
+                var buttons = new StackLayout
                 {
                     Spacing = 30,
                     HorizontalOptions = LayoutOptions.CenterAndExpand,
@@ -150,7 +153,9 @@ namespace TTMobileClient.Views
                 stack.Children.Add(buttons);
                 Content = stack;
 
-                ShowCurrentPositionOnMap();
+        //ShowCurrentPositionOnMap();
+
+        DropCustomPin();
 
                 return true;
             }
@@ -563,6 +568,28 @@ namespace TTMobileClient.Views
             var lon = Convert.ToDouble(lonS);
 
             Xamarin.Forms.Device.BeginInvokeOnMainThread(() => { ShowTrackedObjectLocation(lat, lon); });*/
+        }
+
+        private void BuildCustomPins()
+        {
+            var pin = new CustomPin
+            {
+                Type = PinType.Place,
+                Position = new Position(37.79752, -122.40183),
+                Label = "Xamarin San Francisco Office",
+                Address = "394 Pacific Ave, San Francisco CA",
+                Id = "Xamarin",
+                Url = "http://xamarin.com/about/"
+            };
+
+            _map.CustomPins = new List<CustomPin> { pin };
+        }
+
+        private void DropCustomPin()
+        {
+            _map.Pins.Add(_map.CustomPins.First());
+            _map.MoveToRegion(MapSpan.FromCenterAndRadius(
+                new Position(37.79752, -122.40183), Distance.FromMiles(1.0)));
         }
     }
 }

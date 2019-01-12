@@ -65,6 +65,8 @@
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="CustomMapRenderer.cs" />
+    <Compile Include="CustomMKAnnotationView.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="AppDelegate.cs" />
     <None Include="Entitlements.plist" />
@@ -153,5 +155,14 @@
       <Project>{6ABE091B-8AC6-4EB9-8520-8ED51A5B9830}</Project>
       <Name>TTMobileClient</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\monkey.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\pin.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\xamarin.png" />
   </ItemGroup>
 </Project>
