@@ -10,6 +10,7 @@ using UIKit;
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using CoreGraphics;
 //using CustomRenderer;
 //using CustomRenderer.iOS;
@@ -21,6 +22,7 @@ using Xamarin.Forms;
 using Xamarin.Forms.Maps;
 using Xamarin.Forms.Maps.iOS;
 using Xamarin.Forms.Platform.iOS;
+using CoreLocation;
 
 [assembly: ExportRenderer(typeof(CustomMap), typeof(CustomMapRenderer))]
 namespace TTMobileClient.iOS
@@ -29,6 +31,52 @@ namespace TTMobileClient.iOS
     {
         UIView customPinView;
         List<CustomPin> customPins;
+        MKPolylineRenderer polylineRenderer;
+
+        protected override void OnElementPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            base.OnElementPropertyChanged(sender, e);
+
+            if (e.PropertyName.Equals("RouteCoordinates"))
+            {
+                var formsMap = (CustomMap)sender;
+                //routeCoordinates = formsMap.RouteCoordinates;
+                //Control.GetMapAsync(this);
+
+                var nativeMap = Control as MKMapView;
+
+                nativeMap.OverlayRenderer = GetOverlayRenderer;
+
+                CLLocationCoordinate2D[] coords = new CLLocationCoordinate2D[formsMap.RouteCoordinates.Count];
+
+                int index = 0;
+                foreach (var position in formsMap.RouteCoordinates)
+                {
+                    coords[index] = new CLLocationCoordinate2D(position.Latitude, position.Longitude);
+                    index++;
+                }
+
+                var routeOverlay = MKPolyline.FromCoordinates(coords);
+                nativeMap.AddOverlay(routeOverlay);
+            }
+        }
+
+        MKOverlayRenderer GetOverlayRenderer(MKMapView mapView, IMKOverlay overlayWrapper)
+        {
+            if (polylineRenderer == null && !Equals(overlayWrapper, null))
+            {
+                var overlay = ObjCRuntime.Runtime.GetNSObject(overlayWrapper.Handle) as IMKOverlay;
+                polylineRenderer = new MKPolylineRenderer(overlay as MKPolyline)
+                {
+                    FillColor = UIColor.Blue,
+                    StrokeColor = UIColor.Red,
+                    LineWidth = 3,
+                    Alpha = 0.4f
+                };
+            }
+            return polylineRenderer;
+        }
+
 
         protected override void OnElementChanged(ElementChangedEventArgs<View> e)
         {
