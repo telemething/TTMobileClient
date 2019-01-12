@@ -99,17 +99,6 @@ namespace TTMobileClient.Views
             try
             {
                 // create map
-                /*_map = new Map(
-                    MapSpan.FromCenterAndRadius(
-                        new Position(47.6062, -122.3321), Distance.FromMiles(0.3)))
-                {
-                    IsShowingUser = true,
-                    HeightRequest = 100,
-                    WidthRequest = 960,
-                    VerticalOptions = LayoutOptions.FillAndExpand
-                };*/
-
-                // create map
                 _map = new CustomMap(
                     MapSpan.FromCenterAndRadius(
                         new Position(47.6062, -122.3321), Distance.FromMiles(0.3)))
@@ -140,17 +129,24 @@ namespace TTMobileClient.Views
 
                 var buttons = new StackLayout
                 {
-                    Spacing = 30,
+                    Spacing = 10,
                     HorizontalOptions = LayoutOptions.CenterAndExpand,
                     Orientation = StackOrientation.Horizontal,
-                    Children = { street, hybrid, satellite, connect,
-                        StatusLandedLabel, StatusLatLabel, StatusLongLabel, StatusAltLabel }
+                    Children = { street, hybrid, satellite, connect }
                 };
 
+                var telem = new StackLayout
+                {
+                    Spacing = 10,
+                    HorizontalOptions = LayoutOptions.CenterAndExpand,
+                    Orientation = StackOrientation.Horizontal,
+                    Children = { StatusLandedLabel, StatusLatLabel, StatusLongLabel, StatusAltLabel }
+                };
 
                 var stack = new StackLayout { Spacing = 0 };
                 stack.Children.Add(_map);
                 stack.Children.Add(buttons);
+                stack.Children.Add(telem);
                 Content = stack;
 
          //ShowCurrentPositionOnMap();
@@ -483,7 +479,7 @@ namespace TTMobileClient.Views
                 {
                     StatusLatLabel.Text = $"Lat: {missionStatus.x_lat}";
                     StatusLongLabel.Text = $"Lon: {missionStatus.y_long}";
-                    StatusAltLabel.Text = $"Alt: {missionStatus.z_alt}";
+                    StatusAltLabel.Text = $"Alt: {Math.Round(missionStatus.z_alt, 2)}";
                     StatusLandedLabel.Text = $"State: {missionStatus.landed_state}";
                 });
 
