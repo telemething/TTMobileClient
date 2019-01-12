@@ -6,6 +6,7 @@ using RosbridgeNet.RosbridgeClient.Common;
 using RosbridgeNet.RosbridgeClient.Common.Interfaces;
 using RosbridgeNet.RosbridgeClient.ProtocolV2;
 using RosSharp.RosBridgeClient;
+using RosSharp.RosBridgeClient.Protocols;
 
 
 //*****************************************************************************
@@ -23,9 +24,33 @@ namespace RosClientLib
     using std_srvs = RosSharp.RosBridgeClient.Services.Standard;
     using rosapi = RosSharp.RosBridgeClient.Services.RosApi;
 
+    public class ConnectionEventArgs : EventArgs
+    {
+        public ConnectionEventArgs(Exception exception, string message)
+        {
+            this.exception = exception;
+            this.message = message;
+        }
+
+        public ConnectionEventArgs(RbConnectionEventArgs rbArgs)
+        {
+            if(null == rbArgs)
+                return;
+
+            this.exception = rbArgs.exception;
+            this.message = rbArgs.message;
+        }
+
+        public Exception exception { get; set; }
+        public string message { get; set; }
+    }
+
     public interface IRosClient
     {
-        void Connect(string uri);
+        void Connect(string uri, EventHandler onConnected,
+            EventHandler onConnectionFailed);
+
+        Task DisConnect();
 
         string Subscribe<T>(string topic, SubscriptionHandler<T> subscriptionHandler,
             int throttleRate = 0, int queueLength = 1, int fragmentSize = int.MaxValue,
@@ -76,14 +101,20 @@ namespace RosClientLib
         }
 
         //*********************************************************************
-        //*
-        //*
-        //*
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="uri"></param>
+        /// <param name="onConnected">ConnectionEventArgs</param>
+        /// <param name="onConnectionFailed">ConnectionEventArgs</param>
+        ///
         //*********************************************************************
 
-        public RosClient(string uri)
+        public RosClient(string uri, EventHandler onConnected, 
+            EventHandler onConnectionFailed)
         {
-            Connect(uri);
+            Connect(uri, onConnected, onConnectionFailed);
         }
 
         //*********************************************************************
@@ -92,16 +123,44 @@ namespace RosClientLib
         /// 
         /// </summary>
         /// <param name="uri"></param>
+        /// <param name="onConnected">ConnectionEventArgs</param>
+        /// <param name="onConnectionFailed">ConnectionEventArgs</param>
         ///
         //*********************************************************************
-        public void Connect(string uri)
+
+        public void Connect(string uri, EventHandler onConnected,
+            EventHandler onConnectionFailed)
         {
-            _webSocketUri = uri;
-            _webSocketProtocol = 
-                new RosSharp.RosBridgeClient.Protocols.WebSocketNetProtocol(uri);
-            _rosSocket = new RosSocket(_webSocketProtocol);
+            try
+            {
+                _webSocketUri = uri;
+                _webSocketProtocol = 
+                    new RosSharp.RosBridgeClient.Protocols.WebSocketNetProtocol(uri);
+                _rosSocket = new RosSocket(_webSocketProtocol, 
+                    (sender, args) => onConnected?.Invoke(
+                        sender, new ConnectionEventArgs(args as RbConnectionEventArgs)), 
+                    (sender, args) => onConnectionFailed?.Invoke(
+                        sender, new ConnectionEventArgs(args as RbConnectionEventArgs)));
+            }
+            catch (Exception e)
+            {
+                throw new Exception($"Connect({uri}) failed : {e.Message}");
+            }
         }
 
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        ///
+        //*********************************************************************
+
+        public async Task DisConnect()
+        {
+            // We need to figure out what to do here
+        }
+        
         //*********************************************************************
         ///
         /// <summary>
@@ -267,7 +326,7 @@ namespace RosClientLib
 
         public static void WaypointTest()
         {
-            IRosClient rc = new RosClientLib.RosClient(TestUri);
+            IRosClient rc = new RosClientLib.RosClient(TestUri, null, null);
             var wp = new RosClientLib.Waypoints();
             wp.CreateTestWaypoints();
             var resp = rc.CallServiceAsync(wp).Result;
@@ -283,7 +342,7 @@ namespace RosClientLib
 
         public static void WaypointTest2()
         {
-            IRosClient rc = new RosClientLib.RosClient(TestUri);
+            IRosClient rc = new RosClientLib.RosClient(TestUri, null, null);
             var wp = new RosClientLib.Waypoints();
             wp.CreateTestWaypoints();
             rc.CallService<Waypoints.WaypointReqResp>(wp, 
@@ -304,8 +363,22 @@ namespace RosClientLib
 
         public static void GeneralTest()
         {
-            var rc = new RosClientLib.RosClient(TestUri);
-            rc.TestTopicSubscription();
+            try
+            {
+                var rc = new RosClientLib.RosClient(TestUri, 
+                    (sender, args) => {},
+                    (sender, args) =>
+                    {
+                        if (args is ConnectionEventArgs rr)
+                            Console.WriteLine($"################## Connection Exception: {rr.message}");
+                    } );
+                rc.TestTopicSubscription();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"################## Exception: {e.Message}");
+                Console.ReadKey(true);
+            }
         }
 
         //*********************************************************************

@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 //using AzureIotLib;
 using Newtonsoft.Json;
 using Plugin.Geolocator;
+using RosClientLib;
+using RosSharp.RosBridgeClient.Messages.Test;
 using Xamarin.Forms;
 using Xamarin.Forms.Internals;
 using Xamarin.Forms.Maps;
@@ -40,6 +42,11 @@ namespace TTMobileClient.Views
         // missing AzureIotLib
         //private AzureIotDevice _azureIotDevice;
 
+        private Label StatusLatLabel;
+        private Label StatusLongLabel;
+        private Label StatusAltLabel;
+        private Label StatusLandedLabel;
+
         //*********************************************************************
         ///
         /// <summary>
@@ -66,7 +73,11 @@ namespace TTMobileClient.Views
             base.OnAppearing();
             ShowMap();
             //Xamarin.Forms.Device.BeginInvokeOnMainThread(ShowCurrentPositionOnMap);
-            Xamarin.Forms.Device.BeginInvokeOnMainThread(ConnectToIotHub);
+
+
+            //Xamarin.Forms.Device.BeginInvokeOnMainThread(ConnectToIotHub);
+            //Xamarin.Forms.Device.BeginInvokeOnMainThread(StartTelemetry);
+
             StartHeartbeatTimer();
         }
 
@@ -86,6 +97,7 @@ namespace TTMobileClient.Views
 
             try
             {
+                // create map
                 _map = new Map(
                     MapSpan.FromCenterAndRadius(
                         new Position(47.6062, -122.3321), Distance.FromMiles(0.3)))
@@ -96,8 +108,35 @@ namespace TTMobileClient.Views
                     VerticalOptions = LayoutOptions.FillAndExpand
                 };
 
+                // create map style buttons
+                var street = new Button { Text = "Street" };
+                var hybrid = new Button { Text = "Hybrid" };
+                var satellite = new Button { Text = "Satellite" };
+                var connect = new Button { Text = "Connect" };
+                street.Clicked += HandleClicked;
+                hybrid.Clicked += HandleClicked;
+                satellite.Clicked += HandleClicked;
+                connect.Clicked += HandleClicked;
+
+                //var PositionLabel = new Label { Text = "This is a green label.", TextColor = Color.FromHex("#77d065"), FontSize = 20 };
+                StatusLatLabel = new Label { Text = "---" };
+                StatusLongLabel = new Label { Text = "---" };
+                StatusAltLabel = new Label { Text = "---" };
+                StatusLandedLabel = new Label { Text = "---" };
+
+        var buttons = new StackLayout
+                {
+                    Spacing = 30,
+                    HorizontalOptions = LayoutOptions.CenterAndExpand,
+                    Orientation = StackOrientation.Horizontal,
+                    Children = { street, hybrid, satellite, connect,
+                        StatusLandedLabel, StatusLatLabel, StatusLongLabel, StatusAltLabel }
+                };
+
+
                 var stack = new StackLayout { Spacing = 0 };
                 stack.Children.Add(_map);
+                stack.Children.Add(buttons);
                 Content = stack;
 
                 ShowCurrentPositionOnMap();
@@ -109,6 +148,36 @@ namespace TTMobileClient.Views
                 //logger.DebugLogError("Fatal Error on permissions: " + ex.Message);
                 await App.Current.MainPage.DisplayAlert("Error", "Error: " + ex.Message, "Ok");
                 return false;
+            }
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        ///
+        //*********************************************************************
+
+        void HandleClicked(object sender, EventArgs e)
+        {
+            var b = sender as Button;
+            switch (b.Text)
+            {
+                case "Street":
+                    _map.MapType = MapType.Street;
+                    break;
+                case "Hybrid":
+                    _map.MapType = MapType.Hybrid;
+                    break;
+                case "Satellite":
+                    _map.MapType = MapType.Satellite;
+                    break;
+                case "Connect":
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(StartTelemetry);
+                    break;
             }
         }
 
@@ -242,7 +311,9 @@ namespace TTMobileClient.Views
         private void StartHeartbeatTimer()
         {
             object obj = null;
-            _heartbeatTimer = new Timer(HeartbeatTimerCallback, obj, new TimeSpan(0, 0, 0, 0), new TimeSpan(0, 0, 5, 0));
+            _heartbeatTimer = new Timer(HeartbeatTimerCallback, obj, 
+                new TimeSpan(0, 0, 0, 0), 
+                new TimeSpan(0, 0, 5, 0));
         }
 
         //*********************************************************************
@@ -286,7 +357,7 @@ namespace TTMobileClient.Views
 
             //await ait.GetDeviceTwinList();
 
-            await _azureIotDevice.ConnectToDevice(GotMessageCallback);*/
+            await _azureIotDevice.ConnectToDevice(GotAzureDeviceMessageCallback);*/
         }
 
         //*********************************************************************
@@ -294,12 +365,126 @@ namespace TTMobileClient.Views
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="lat"></param>
-        /// <param name="lon"></param>
         ///
         //*********************************************************************
 
-        public async void SendPositionUpdate(double lat, double lon)
+        string TestUri = "ws://192.168.1.30:9090";
+        private IRosClient _rosClient = null;
+
+        private async void ConnectToMav()
+        {
+            if( null == _rosClient)
+                _rosClient = new RosClientLib.RosClient(TestUri, 
+                    OnConnected, OnConnectionFailed );
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        ///
+        //*********************************************************************
+
+        private void OnConnectionFailed(object sender, EventArgs e)
+        {
+            string message = "unspecified connection error";
+
+            _rosClient.DisConnect();
+
+            _rosClient = null;
+
+            if (e is ConnectionEventArgs tt)
+                message = tt.message;
+
+            Xamarin.Forms.Device.BeginInvokeOnMainThread(
+                () => App.Current.MainPage.DisplayAlert(
+                    "Error", "Error: " + message, "Ok"));
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        ///
+        //*********************************************************************
+
+        private void OnConnected(object sender, EventArgs e)
+        {
+            var tt = e as ConnectionEventArgs;
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        ///
+        //*********************************************************************
+
+        private async void StartTelemetry()
+        {
+            ConnectToMav();
+
+            /*var subscriptionId = rosClient.Subscribe
+                <RosSharp.RosBridgeClient.Messages.Test.MissionStatus>(
+                    "/tt_mavros_wp_mission/MissionStatus",
+                    (message) =>
+                    { Console.WriteLine((message).ToString()); });*/
+
+            var subscriptionId = _rosClient.Subscribe
+                <RosSharp.RosBridgeClient.Messages.Test.MissionStatus>(
+                    "/tt_mavros_wp_mission/MissionStatus", 
+                    TelemetrySubscriptionHandler);
+
+            //rosClient.Unsubscribe(subscriptionId);
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="missionStatus"></param>
+        /// 
+        //*********************************************************************
+
+        private void TelemetrySubscriptionHandler(MissionStatus missionStatus)
+        {
+            // do something to prevent high frequency updating
+
+            var tt = missionStatus.x_lat;
+
+            Xamarin.Forms.Device.BeginInvokeOnMainThread(
+                () =>
+                {
+                    StatusLatLabel.Text = $"Lat: {missionStatus.x_lat}";
+                    StatusLongLabel.Text = $"Lon: {missionStatus.y_long}";
+                    StatusAltLabel.Text = $"Alt: {missionStatus.z_alt}";
+                    StatusLandedLabel.Text = $"State: {missionStatus.landed_state}";
+                });
+
+        //Xamarin.Forms.Device.BeginInvokeOnMainThread(
+        //   () => { ShowTrackedObjectLocation(
+        //      missionStatus.x_lat, missionStatus.y_long); }); 
+    }
+
+    //*********************************************************************
+    ///
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="lat"></param>
+    /// <param name="lon"></param>
+    ///
+    //*********************************************************************
+
+    public async void SendPositionUpdate(double lat, double lon)
         {
             //_azureIotDevice.SendD2C($"{{\"state\":{{\"reported\":{{\"lat\":\"{lat}\",\"lon\":\"{lon}\"}}}}}}");
 
@@ -350,7 +535,7 @@ namespace TTMobileClient.Views
         ///
         //*********************************************************************
 
-        private void GotMessageCallback(byte[] messagepayload)
+        private void GotAzureDeviceMessageCallback(byte[] messagepayload)
         {
             if (null == messagepayload)
                 return;
