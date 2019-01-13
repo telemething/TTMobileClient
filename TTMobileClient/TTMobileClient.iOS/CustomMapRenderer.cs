@@ -1,19 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-using Foundation;
 using UIKit;
-
-
-
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using CoreGraphics;
-//using CustomRenderer;
-//using CustomRenderer.iOS;
 using TTMobileClient;
 using TTMobileClient.iOS;
 using MapKit;
@@ -32,6 +21,54 @@ namespace TTMobileClient.iOS
         UIView customPinView;
         List<CustomPin> customPins;
         MKPolylineRenderer polylineRenderer;
+        private readonly UITapGestureRecognizer _tapRecogniser;
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// 
+        //*********************************************************************
+
+        public CustomMapRenderer()
+        {
+            _tapRecogniser = new UITapGestureRecognizer(OnTap)
+            {
+                NumberOfTapsRequired = 1,
+                NumberOfTouchesRequired = 1
+            };
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="recognizer"></param>
+        ///
+        //*********************************************************************
+
+        private void OnTap(UITapGestureRecognizer recognizer)
+        {
+            var cgPoint = recognizer.LocationInView(Control);
+            var mapView = (MKMapView)Control;
+            var location = mapView.ConvertPoint(cgPoint, Control);
+
+            //*** TODO * Make sure we didn't click on an existing pin
+
+            //((CustomMap)Element).MapClickCallback(location.Latitude, location.Longitude);
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        ///
+        //*********************************************************************
 
         protected override void OnElementPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
@@ -61,6 +98,17 @@ namespace TTMobileClient.iOS
             }
         }
 
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="mapView"></param>
+        /// <param name="overlayWrapper"></param>
+        /// <returns></returns>
+        ///
+        //*********************************************************************
+
         MKOverlayRenderer GetOverlayRenderer(MKMapView mapView, IMKOverlay overlayWrapper)
         {
             if (polylineRenderer == null && !Equals(overlayWrapper, null))
@@ -77,6 +125,14 @@ namespace TTMobileClient.iOS
             return polylineRenderer;
         }
 
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="e"></param>
+        ///
+        //*********************************************************************
 
         protected override void OnElementChanged(ElementChangedEventArgs<View> e)
         {
@@ -89,6 +145,9 @@ namespace TTMobileClient.iOS
                 nativeMap.CalloutAccessoryControlTapped -= OnCalloutAccessoryControlTapped;
                 nativeMap.DidSelectAnnotationView -= OnDidSelectAnnotationView;
                 nativeMap.DidDeselectAnnotationView -= OnDidDeselectAnnotationView;
+
+                Control.RemoveGestureRecognizer(_tapRecogniser);
+
             }
 
             if (e.NewElement != null)
@@ -101,10 +160,24 @@ namespace TTMobileClient.iOS
                 nativeMap.CalloutAccessoryControlTapped += OnCalloutAccessoryControlTapped;
                 nativeMap.DidSelectAnnotationView += OnDidSelectAnnotationView;
                 nativeMap.DidDeselectAnnotationView += OnDidDeselectAnnotationView;
+
+                Control.AddGestureRecognizer(_tapRecogniser);
             }
         }
 
-        protected override MKAnnotationView GetViewForAnnotation(MKMapView mapView, IMKAnnotation annotation)
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="mapView"></param>
+        /// <param name="annotation"></param>
+        /// <returns></returns>
+        /// 
+        //*********************************************************************
+
+        protected override MKAnnotationView GetViewForAnnotation(
+            MKMapView mapView, IMKAnnotation annotation)
         {
             MKAnnotationView annotationView = null;
 
@@ -120,11 +193,13 @@ namespace TTMobileClient.iOS
             annotationView = mapView.DequeueReusableAnnotation(customPin.Id.ToString());
             if (annotationView == null)
             {
-                annotationView = new CustomMKAnnotationView(annotation, customPin.Id.ToString());
-                annotationView.Image = UIImage.FromFile("pin.png");
-                annotationView.CalloutOffset = new CGPoint(0, 0);
-                annotationView.LeftCalloutAccessoryView = new UIImageView(UIImage.FromFile("monkey.png"));
-                annotationView.RightCalloutAccessoryView = UIButton.FromType(UIButtonType.DetailDisclosure);
+                annotationView = new CustomMKAnnotationView(annotation, customPin.Id.ToString())
+                {
+                    Image = UIImage.FromFile("pin.png"),
+                    CalloutOffset = new CGPoint(0, 0),
+                    LeftCalloutAccessoryView = new UIImageView(UIImage.FromFile("monkey.png")),
+                    RightCalloutAccessoryView = UIButton.FromType(UIButtonType.DetailDisclosure)
+                };
                 ((CustomMKAnnotationView)annotationView).Id = customPin.Id.ToString();
                 ((CustomMKAnnotationView)annotationView).Url = customPin.Url;
             }
@@ -133,7 +208,18 @@ namespace TTMobileClient.iOS
             return annotationView;
         }
 
-        void OnCalloutAccessoryControlTapped(object sender, MKMapViewAccessoryTappedEventArgs e)
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        ///
+        //*********************************************************************
+
+        void OnCalloutAccessoryControlTapped(
+            object sender, MKMapViewAccessoryTappedEventArgs e)
         {
             var customView = e.View as CustomMKAnnotationView;
             if (!string.IsNullOrWhiteSpace(customView.Url))
@@ -141,6 +227,16 @@ namespace TTMobileClient.iOS
                 UIApplication.SharedApplication.OpenUrl(new Foundation.NSUrl(customView.Url));
             }
         }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        ///
+        //*********************************************************************
 
         void OnDidSelectAnnotationView(object sender, MKAnnotationViewEventArgs e)
         {
@@ -158,6 +254,16 @@ namespace TTMobileClient.iOS
             }
         }
 
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        ///
+        //*********************************************************************
+
         void OnDidDeselectAnnotationView(object sender, MKAnnotationViewEventArgs e)
         {
             if (!e.View.Selected)
@@ -168,9 +274,20 @@ namespace TTMobileClient.iOS
             }
         }
 
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="annotation"></param>
+        /// <returns></returns>
+        ///
+        //*********************************************************************
+
         CustomPin GetCustomPin(MKPointAnnotation annotation)
         {
-            var position = new Position(annotation.Coordinate.Latitude, annotation.Coordinate.Longitude);
+            var position = new Position(annotation.Coordinate.Latitude, 
+                annotation.Coordinate.Longitude);
             foreach (var pin in customPins)
             {
                 if (pin.Position == position)

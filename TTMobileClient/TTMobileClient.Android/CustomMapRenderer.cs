@@ -22,12 +22,33 @@ namespace TTMobileClient.Droid
     {
         List<CustomPin> customPins;
         List<Position> routeCoordinates;
+        private bool _viewingPinInfo = false;
+
+        //*********************************************************************
+        //
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="context"></param>
+        ///
+        //*********************************************************************
 
         public CustomMapRenderer(Context context) : base(context)
         {
         }
 
-        protected override void OnElementPropertyChanged(object sender, PropertyChangedEventArgs e)
+        //*********************************************************************
+        //
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        ///
+        //*********************************************************************
+
+        protected override void OnElementPropertyChanged(
+            object sender, PropertyChangedEventArgs e)
         {
             base.OnElementPropertyChanged(sender, e);
 
@@ -39,7 +60,17 @@ namespace TTMobileClient.Droid
             }
         }
 
-        protected override void OnElementChanged(Xamarin.Forms.Platform.Android.ElementChangedEventArgs<Map> e)
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="e"></param>
+        ///
+        //*********************************************************************
+
+        protected override void OnElementChanged(
+            Xamarin.Forms.Platform.Android.ElementChangedEventArgs<Map> e)
         {
             base.OnElementChanged(e);
 
@@ -56,10 +87,20 @@ namespace TTMobileClient.Droid
             }
         }
 
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="map"></param>
+        ///
+        //*********************************************************************
+
         protected override void OnMapReady(GoogleMap map)
         {
             base.OnMapReady(map);
 
+            NativeMap.MapClick += NativeMapOnMapClick;
             NativeMap.InfoWindowClick += OnInfoWindowClick;
             NativeMap.SetInfoWindowAdapter(this);
 
@@ -76,6 +117,44 @@ namespace TTMobileClient.Droid
             }
         }
 
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        ///
+        //*********************************************************************
+
+        private void NativeMapOnMapClick(object sender, GoogleMap.MapClickEventArgs e)
+        {
+            // if user is viewing pin info, then an outside click just clears
+            // the pin info, and we don't drop a new pin
+
+            if (_viewingPinInfo)
+            {
+                _viewingPinInfo = false;
+                return;
+            }
+
+            var formsMap = Element as CustomMap;
+
+            formsMap?.MapClickCallback(e.Point.Latitude, e.Point.Longitude );
+
+            //((ExtMap)Element).OnTap(new Position(e.Point.Latitude, e.Point.Longitude));
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pin"></param>
+        /// <returns></returns>
+        ///
+        //*********************************************************************
+
         protected override MarkerOptions CreateMarker(Pin pin)
         {
             var marker = new MarkerOptions();
@@ -85,6 +164,16 @@ namespace TTMobileClient.Droid
             marker.SetIcon(BitmapDescriptorFactory.FromResource(Resource.Drawable.pin));
             return marker;
         }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        ///
+        //*********************************************************************
 
         void OnInfoWindowClick(object sender, GoogleMap.InfoWindowClickEventArgs e)
         {
@@ -103,9 +192,20 @@ namespace TTMobileClient.Droid
             }
         }
 
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="marker"></param>
+        /// <returns></returns>
+        ///
+        //*********************************************************************
+
         public Android.Views.View GetInfoContents(Marker marker)
         {
-            var inflater = Android.App.Application.Context.GetSystemService(Context.LayoutInflaterService) as Android.Views.LayoutInflater;
+            var inflater = Android.App.Application.Context.GetSystemService(
+                Context.LayoutInflaterService) as Android.Views.LayoutInflater;
             if (inflater != null)
             {
                 Android.Views.View view;
@@ -137,19 +237,41 @@ namespace TTMobileClient.Droid
                     infoSubtitle.Text = marker.Snippet;
                 }
 
+                _viewingPinInfo = true;
                 return view;
             }
             return null;
         }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="marker"></param>
+        /// <returns></returns>
+        ///
+        //*********************************************************************
 
         public Android.Views.View GetInfoWindow(Marker marker)
         {
             return null;
         }
 
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="annotation"></param>
+        /// <returns></returns>
+        ///
+        //*********************************************************************
+
         CustomPin GetCustomPin(Marker annotation)
         {
-            var position = new Position(annotation.Position.Latitude, annotation.Position.Longitude);
+            var position = new Position(annotation.Position.Latitude, 
+                annotation.Position.Longitude);
             foreach (var pin in customPins)
             {
                 if (pin.Position == position)

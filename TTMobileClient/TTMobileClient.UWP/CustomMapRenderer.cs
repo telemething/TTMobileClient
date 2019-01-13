@@ -1,16 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-
 using TTMobileClient;
 using TTMobileClient.UWP;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using Windows.Devices.Geolocation;
 using Windows.Storage.Streams;
 using Windows.UI.Xaml.Controls.Maps;
@@ -24,11 +17,23 @@ namespace TTMobileClient.UWP
     public class CustomMapRenderer : MapRenderer
     {
         MapControl nativeMap;
+        private CustomMap formsMap;
         List<CustomPin> customPins;
         XamarinMapOverlay mapOverlay;
         bool xamarinOverlayShown = false;
 
-        protected override void OnElementPropertyChanged(object sender, PropertyChangedEventArgs e)
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        ///
+        //*********************************************************************
+
+        protected override void OnElementPropertyChanged(
+            object sender, PropertyChangedEventArgs e)
         {
             base.OnElementPropertyChanged(sender, e);
 
@@ -37,7 +42,7 @@ namespace TTMobileClient.UWP
 
             if (e.PropertyName.Equals("RouteCoordinates"))
             {
-                var formsMap = (CustomMap)sender;
+                formsMap = (CustomMap)sender;
                 nativeMap = Control as MapControl;
 
                 if (0 != formsMap.RouteCoordinates.Count())
@@ -46,17 +51,28 @@ namespace TTMobileClient.UWP
                     foreach (var position in formsMap.RouteCoordinates)
                     {
                         coordinates.Add(new BasicGeoposition()
-                            { Latitude = position.Latitude, Longitude = position.Longitude });
+                            { Latitude = position.Latitude,
+                                Longitude = position.Longitude });
                     }
 
                     var polyline = new MapPolyline();
-                    polyline.StrokeColor = Windows.UI.Color.FromArgb(128, 255, 0, 0);
+                    polyline.StrokeColor = Windows.UI.Color.
+                        FromArgb(128, 255, 0, 0);
                     polyline.StrokeThickness = 5;
                     polyline.Path = new Geopath(coordinates);
                     nativeMap.MapElements.Add(polyline);
                 }
             }
         }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="e"></param>
+        ///
+        //*********************************************************************
 
         protected override void OnElementChanged(ElementChangedEventArgs<Map> e)
         {
@@ -65,6 +81,7 @@ namespace TTMobileClient.UWP
             if (e.OldElement != null)
             {
                 nativeMap.MapElementClick -= OnMapElementClick;
+                nativeMap.MapTapped -= NativeMapOnMapTapped;
                 nativeMap.Children.Clear();
                 mapOverlay = null;
                 nativeMap = null;
@@ -72,24 +89,33 @@ namespace TTMobileClient.UWP
 
             if (e.NewElement != null)
             {
-                var formsMap = (CustomMap)e.NewElement;
+                formsMap = (CustomMap)e.NewElement;
                 nativeMap = Control as MapControl;
                 customPins = formsMap.CustomPins;
 
                 nativeMap.Children.Clear();
+
                 nativeMap.MapElementClick += OnMapElementClick;
+                nativeMap.MapTapped += NativeMapOnMapTapped;
 
                 // Pins
                 foreach (var pin in customPins)
                 {
-                    var snPosition = new BasicGeoposition { Latitude = pin.Position.Latitude, Longitude = pin.Position.Longitude };
+                    var snPosition = new BasicGeoposition
+                    {
+                        Latitude = pin.Position.Latitude,
+                        Longitude = pin.Position.Longitude
+                    };
                     var snPoint = new Geopoint(snPosition);
 
                     var mapIcon = new MapIcon();
-                    mapIcon.Image = RandomAccessStreamReference.CreateFromUri(new Uri("ms-appx:///pin.png"));
-                    mapIcon.CollisionBehaviorDesired = MapElementCollisionBehavior.RemainVisible;
+                    mapIcon.Image = RandomAccessStreamReference.
+                        CreateFromUri(new Uri("ms-appx:///pin.png"));
+                    mapIcon.CollisionBehaviorDesired = 
+                        MapElementCollisionBehavior.RemainVisible;
                     mapIcon.Location = snPoint;
-                    mapIcon.NormalizedAnchorPoint = new Windows.Foundation.Point(0.5, 1.0);
+                    mapIcon.NormalizedAnchorPoint = 
+                        new Windows.Foundation.Point(0.5, 1.0);
 
                     nativeMap.MapElements.Add(mapIcon);
                 }
@@ -104,19 +130,47 @@ namespace TTMobileClient.UWP
                             {Latitude = position.Latitude, Longitude = position.Longitude});
                     }
 
-                    var polyline = new MapPolyline();
-                    polyline.StrokeColor = Windows.UI.Color.FromArgb(128, 255, 0, 0);
-                    polyline.StrokeThickness = 5;
-                    polyline.Path = new Geopath(coordinates);
+                    var polyline = new MapPolyline
+                    {
+                        StrokeColor = Windows.UI.Color.FromArgb(128, 255, 0, 0),
+                        StrokeThickness = 5,
+                        Path = new Geopath(coordinates)
+                    };
                     nativeMap.MapElements.Add(polyline);
                 }
             }
         }
 
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        ///
+        //*********************************************************************
+
+        private void NativeMapOnMapTapped(MapControl sender, MapInputEventArgs args)
+        {
+            formsMap.MapClickCallback(args.Location.Position.Latitude,
+                args.Location.Position.Longitude,
+                args.Location.Position.Altitude);
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        ///
+        //*********************************************************************
+
         private void OnMapElementClick(MapControl sender, MapElementClickEventArgs args)
         {
-            var mapIcon = args.MapElements.FirstOrDefault(x => x is MapIcon) as MapIcon;
-            if (mapIcon != null)
+            if (args.MapElements.FirstOrDefault(x => x is MapIcon) is MapIcon mapIcon)
             {
                 if (!xamarinOverlayShown)
                 {
@@ -133,12 +187,17 @@ namespace TTMobileClient.UWP
                             mapOverlay = new XamarinMapOverlay(customPin);
                         }
 
-                        var snPosition = new BasicGeoposition { Latitude = customPin.Position.Latitude, Longitude = customPin.Position.Longitude };
+                        var snPosition = new BasicGeoposition
+                        {
+                            Latitude = customPin.Position.Latitude,
+                            Longitude = customPin.Position.Longitude
+                        };
                         var snPoint = new Geopoint(snPosition);
 
                         nativeMap.Children.Add(mapOverlay);
                         MapControl.SetLocation(mapOverlay, snPoint);
-                        MapControl.SetNormalizedAnchorPoint(mapOverlay, new Windows.Foundation.Point(0.5, 1.0));
+                        MapControl.SetNormalizedAnchorPoint(mapOverlay, 
+                            new Windows.Foundation.Point(0.5, 1.0));
                         xamarinOverlayShown = true;
                     }
                 }
@@ -149,6 +208,16 @@ namespace TTMobileClient.UWP
                 }
             }
         }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        ///
+        //*********************************************************************
 
         CustomPin GetCustomPin(BasicGeoposition position)
         {

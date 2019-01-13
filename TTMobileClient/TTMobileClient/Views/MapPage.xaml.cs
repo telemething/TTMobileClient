@@ -108,8 +108,10 @@ namespace TTMobileClient.Views
                     IsShowingUser = true,
                     HeightRequest = 100,
                     WidthRequest = 960,
-                    VerticalOptions = LayoutOptions.FillAndExpand
+                    VerticalOptions = LayoutOptions.FillAndExpand,
                 };
+
+        _map.OnMapClick += OnMapClick;
 
                 BuildCustomPins();
 
@@ -158,7 +160,7 @@ namespace TTMobileClient.Views
 
          //ShowCurrentPositionOnMap();
 
-         //TestDropCustomPin();
+         TestDropCustomPin();
 
          //TestDrawPolyline();
 
@@ -170,6 +172,38 @@ namespace TTMobileClient.Views
                 await App.Current.MainPage.DisplayAlert("Error", "Error: " + ex.Message, "Ok");
                 return false;
             }
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        ///
+        //*********************************************************************
+
+        private void OnMapClick(object sender, OnMapClickEventArgs e)
+        {
+            DropPin(e.Lat, e.Lon, e.Alt);
+        }
+
+        private void DropPin(double lat, double lon, double alt)
+        {
+            var pin = new CustomPin
+            {
+                Type = PinType.Place,
+                Position = new Position(lat, lon),
+                Label = "Waypoint",
+                Address = $"Lat: {lat}, Lon: {lon}, alt: {alt}",
+                Id = "Waypoint",
+                Url = "http://xamarin.com/about/"
+            };
+
+            //_map.CustomPins = new List<CustomPin> { pin };
+
+            _map.Pins.Add(pin);
         }
 
         //*********************************************************************
@@ -674,8 +708,8 @@ namespace TTMobileClient.Views
         private void TestDropCustomPin()
         {
             _map.Pins.Add(_map.CustomPins.First());
-            //_map.MoveToRegion(MapSpan.FromCenterAndRadius(
-            //    new Position(37.79752, -122.40183), Distance.FromMiles(1.0)));
+            _map.MoveToRegion(MapSpan.FromCenterAndRadius(
+                new Position(37.79752, -122.40183), Distance.FromMiles(1.0)));
         }
 
         //*********************************************************************

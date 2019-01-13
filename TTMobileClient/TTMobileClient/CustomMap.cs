@@ -18,8 +18,42 @@ namespace TTMobileClient
         public string Url { get; set; }
     }
 
+    public class OnMapClickEventArgs : EventArgs
+    {
+        private double _lat;
+        private double _lon;
+        private double _alt;
+
+        public double Lat
+        {
+            set => _lat = value;
+            get => _lat;
+        }
+
+        public double Lon
+        {
+            set => _lon = value;
+            get => _lon;
+        }
+
+        public double Alt
+        {
+            set => _alt = value;
+            get => _alt;
+        }
+
+        public OnMapClickEventArgs(double lat, double lon, double alt)
+        {
+            _lat = lat;
+            _lon = lon;
+            _alt = alt;
+        }
+    }
+
     public class CustomMap : Map
     {
+        public event EventHandler<OnMapClickEventArgs> OnMapClick;
+
         public List<Position> routeCoordinates;
         public List<CustomPin> customPins;
 
@@ -39,6 +73,18 @@ namespace TTMobileClient
        {
            CustomPins = new List<CustomPin>();
            routeCoordinates = new List<Position>();
-        }
+       }
+
+       public void MapClickCallback(double lat, double lon, double alt)
+       {
+           OnMapClick?.Invoke(this,
+               new OnMapClickEventArgs(lat, lon, alt));
+       }
+
+       public void MapClickCallback(double lat, double lon)
+       {
+           OnMapClick?.Invoke(this,
+               new OnMapClickEventArgs(lat, lon, 0));
+       }
     }
 }
