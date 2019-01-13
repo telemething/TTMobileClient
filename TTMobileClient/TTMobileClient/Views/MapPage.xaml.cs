@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Flitesys.GeographicLib;
 // missing AzureIotLib
 //using AzureIotLib;
 using Newtonsoft.Json;
@@ -40,6 +41,7 @@ namespace TTMobileClient.Views
         private CustomMap _map;
         private Plugin.Geolocator.Abstractions.Position _myPosition;
         private Timer _heartbeatTimer;
+        private MissionStatus _missionStatus;
         // missing AzureIotLib
         //private AzureIotDevice _azureIotDevice;
 
@@ -116,10 +118,15 @@ namespace TTMobileClient.Views
                 var hybrid = new Button { Text = "Hybrid" };
                 var satellite = new Button { Text = "Satellite" };
                 var connect = new Button { Text = "Connect" };
+                var sendMission = new Button { Text = "sendMission" };
+                var StartMission = new Button { Text = "StartMission" };
+
                 street.Clicked += HandleClicked;
                 hybrid.Clicked += HandleClicked;
                 satellite.Clicked += HandleClicked;
                 connect.Clicked += HandleClicked;
+                sendMission.Clicked += HandleClicked;
+                StartMission.Clicked += HandleClicked;
 
                 //var PositionLabel = new Label { Text = "This is a green label.", TextColor = Color.FromHex("#77d065"), FontSize = 20 };
                 StatusLatLabel = new Label { Text = "---" };
@@ -132,7 +139,7 @@ namespace TTMobileClient.Views
                     Spacing = 10,
                     HorizontalOptions = LayoutOptions.CenterAndExpand,
                     Orientation = StackOrientation.Horizontal,
-                    Children = { street, hybrid, satellite, connect }
+                    Children = { street, hybrid, satellite, connect, sendMission, StartMission }
                 };
 
                 var telem = new StackLayout
@@ -153,7 +160,7 @@ namespace TTMobileClient.Views
 
          //TestDropCustomPin();
 
-         TestDrawPolyline();
+         //TestDrawPolyline();
 
                 return true;
             }
@@ -191,6 +198,12 @@ namespace TTMobileClient.Views
                     break;
                 case "Connect":
                     Xamarin.Forms.Device.BeginInvokeOnMainThread(StartTelemetry);
+                    break;
+                case "sendMission":
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(SendMission);
+                    break;
+                case "StartMission":
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(StartMission);
                     break;
             }
         }
@@ -441,19 +454,63 @@ namespace TTMobileClient.Views
         ///
         //*********************************************************************
 
-        private async void StartTelemetry()
+        private async void SendMission()
+        {
+            Waypoints waypoints = new Waypoints();
+
+            waypoints.StartNewMission();
+            waypoints.AddWaypoint(Mavros.Command.NAV_TAKEOFF, _missionStatus.x_lat, _missionStatus.y_long, 10, 5);
+            waypoints.AddWaypoint(Mavros.Command.NAV_WAYPOINT, 90, 25, 10, 5);
+            waypoints.AddWaypoint(Mavros.Command.NAV_WAYPOINT, 180, 25, 10, 5);
+            waypoints.AddWaypoint(Mavros.Command.NAV_LAND, 270, 25, 10, 5);
+
+            ConnectToMav();
+            _rosClient.CallService<Waypoints.WaypointReqResp>(waypoints, 
+                resp => {
+                    if ( !resp.success)
+                        Xamarin.Forms.Device.BeginInvokeOnMainThread(
+                    () => App.Current.MainPage.DisplayAlert(
+                        "Error", "Unable to send waypoints", "Ok"));
+                } );
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        ///
+        //*********************************************************************
+
+        private async void StartMission()
         {
             ConnectToMav();
+            _rosClient.CallService<StartMission.StartMissionReqResp>(new StartMission(), 
+                resp => {
+                    if (!resp.success)
+                        Xamarin.Forms.Device.BeginInvokeOnMainThread(
+                            () => App.Current.MainPage.DisplayAlert(
+                                "Error", "Unable to start mission", "Ok"));
+                });
+        }
 
-            /*var subscriptionId = rosClient.Subscribe
-                <RosSharp.RosBridgeClient.Messages.Test.MissionStatus>(
-                    "/tt_mavros_wp_mission/MissionStatus",
-                    (message) =>
-                    { Console.WriteLine((message).ToString()); });*/
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        ///
+        //*********************************************************************
+
+        private async void StartTelemetry()
+        {
+            _moveMapToTrackedObject = true;
+
+            ConnectToMav();
 
             var subscriptionId = _rosClient.Subscribe
                 <RosSharp.RosBridgeClient.Messages.Test.MissionStatus>(
-                    "/tt_mavros_wp_mission/MissionStatus", 
+                    "/tt_mavros_wp_mission/MissionStatus",
                     TelemetrySubscriptionHandler);
 
             //rosClient.Unsubscribe(subscriptionId);
@@ -472,7 +529,7 @@ namespace TTMobileClient.Views
         {
             // do something to prevent high frequency updating
 
-            var tt = missionStatus.x_lat;
+            _missionStatus = missionStatus;
 
             Xamarin.Forms.Device.BeginInvokeOnMainThread(
                 () =>
@@ -481,24 +538,23 @@ namespace TTMobileClient.Views
                     StatusLongLabel.Text = $"Lon: {missionStatus.y_long}";
                     StatusAltLabel.Text = $"Alt: {Math.Round(missionStatus.z_alt, 2)}";
                     StatusLandedLabel.Text = $"State: {missionStatus.landed_state}";
+
+                    ShowTrackedObjectLocation(
+                        missionStatus.x_lat, missionStatus.y_long, 2); 
                 });
+        }
 
-        //Xamarin.Forms.Device.BeginInvokeOnMainThread(
-        //   () => { ShowTrackedObjectLocation(
-        //      missionStatus.x_lat, missionStatus.y_long); }); 
-    }
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="lat"></param>
+        /// <param name="lon"></param>
+        ///
+        //*********************************************************************
 
-    //*********************************************************************
-    ///
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="lat"></param>
-    /// <param name="lon"></param>
-    ///
-    //*********************************************************************
-
-    public async void SendPositionUpdate(double lat, double lon)
+        public async void SendPositionUpdate(double lat, double lon)
         {
             //_azureIotDevice.SendD2C($"{{\"state\":{{\"reported\":{{\"lat\":\"{lat}\",\"lon\":\"{lon}\"}}}}}}");
 
@@ -516,10 +572,21 @@ namespace TTMobileClient.Views
         ///
         //*********************************************************************
 
-        private void ShowTrackedObjectLocation(double lat, double lon)
+        private double lastLat = 0;
+        private double lastLon = 0;
+        private readonly Geodesic _geo = Geodesic.WGS84;
+        private bool _moveMapToTrackedObject = true;
+
+        private void ShowTrackedObjectLocation(double lat, double lon, double minDelta)
         {
             try
             {
+                if (minDelta > _geo.Inverse(lastLat, lastLon, lat, lon).Distance)
+                    return;
+
+                lastLat = lat;
+                lastLon = lon;
+
                 var position = new Position(lat, lon); // Latitude, Longitude
                 var pin = new Pin
                 {
@@ -530,9 +597,14 @@ namespace TTMobileClient.Views
                 };
                 _map.Pins.Add(pin);
 
-                _map.MoveToRegion(
-                    MapSpan.FromCenterAndRadius(
-                        position, Distance.FromMiles(1)));
+                if (_moveMapToTrackedObject)
+                {
+                    _map.MoveToRegion(
+                        MapSpan.FromCenterAndRadius(
+                            position, Distance.FromMiles(1)));
+
+                    _moveMapToTrackedObject = false;
+                }
             }
             catch (Exception e)
             {
@@ -568,6 +640,14 @@ namespace TTMobileClient.Views
             Xamarin.Forms.Device.BeginInvokeOnMainThread(() => { ShowTrackedObjectLocation(lat, lon); });*/
         }
 
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        ///
+        //*********************************************************************
+
         private void BuildCustomPins()
         {
             var pin = new CustomPin
@@ -583,12 +663,28 @@ namespace TTMobileClient.Views
             _map.CustomPins = new List<CustomPin> { pin };
         }
 
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        ///
+        //*********************************************************************
+
         private void TestDropCustomPin()
         {
             _map.Pins.Add(_map.CustomPins.First());
             //_map.MoveToRegion(MapSpan.FromCenterAndRadius(
             //    new Position(37.79752, -122.40183), Distance.FromMiles(1.0)));
         }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        ///
+        //*********************************************************************
 
         private void TestDrawPolyline()
         {
