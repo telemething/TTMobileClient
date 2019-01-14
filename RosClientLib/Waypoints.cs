@@ -273,7 +273,9 @@ namespace RosClientLib
         //*********************************************************************
 
         public void AddWaypoint( Mavros.Command command, double lat, 
-            double lon, double alt, float time)
+            double lon, double alt, 
+            bool isCurrent, bool autoContinue,
+            float param1, float param2, float param3, float param4)
         {
             double currentAlt;
 
@@ -283,14 +285,14 @@ namespace RosClientLib
 
             AddWaypoint(new Waypoint()
             {
-                autocontinue = true,
+                autocontinue = autoContinue,
                 command = (ushort)command,
                 frame = (byte)Mavros.NavFrame.FRAME_GLOBAL_REL_ALT,
-                is_current = true,
-                param1 = time,
-                param2 = 0,
-                param3 = 0,
-                param4 = 0,
+                is_current = isCurrent,
+                param1 = param1,
+                param2 = param2,
+                param3 = param3,
+                param4 = param4,
                 x_lat = lat,
                 y_long = lon,
                 z_alt = alt
@@ -304,17 +306,22 @@ namespace RosClientLib
         //*********************************************************************
 
         public void AddWaypoint(Mavros.Command command, Int32 direction, 
-            double distance, double alt, float time)
+            double distance, double alt, bool isCurrent, bool autoContinue,
+            float param1, float param2, float param3, float param4)
         {
+
             // we can't move relative if we haven't taken off
-            if(null == _lastWaypoint)
+            if (null == _lastWaypoint)
+            {
                 throw new Exception("_lastWaypoint == NULL");
+            }
 
             // calculate new lat & long
             var coords = _geo.Direct(
                 _lastWaypoint.x_lat, _lastWaypoint.y_long, direction, distance);
 
-            AddWaypoint(command, coords.Latitude2, coords.Longitude2, alt, time);
+            AddWaypoint(command, coords.Latitude2, coords.Longitude2, 
+                alt, isCurrent, autoContinue, param1, param2, param3, param4);
         }
 
         //*********************************************************************
@@ -360,10 +367,10 @@ namespace RosClientLib
         public void CreateTestWaypoints()
         {
             StartNewMission();
-            AddWaypoint(Mavros.Command.NAV_TAKEOFF, 0.0, 0.0, 10, 5);
-            AddWaypoint(Mavros.Command.NAV_WAYPOINT, 90, 1, 10, 5);
-            AddWaypoint(Mavros.Command.NAV_WAYPOINT, 180, 1, 10, 5);
-            AddWaypoint(Mavros.Command.NAV_LAND, 270, 1, 10, 5);
+            AddWaypoint(Mavros.Command.NAV_TAKEOFF, 0.0, 0.0, 10, true, true, 5, 0, 0, 0);
+            AddWaypoint(Mavros.Command.NAV_WAYPOINT, 90, 1, 10, false, true, 5, 0, 0, 0);
+            AddWaypoint(Mavros.Command.NAV_WAYPOINT, 180, 1, 10, false, true, 5, 0, 0, 0);
+            AddWaypoint(Mavros.Command.NAV_LAND, 270, 1, 10, false, true, 5, 0, 0, 0);
         }
 
         //*********************************************************************

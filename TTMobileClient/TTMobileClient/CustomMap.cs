@@ -13,7 +13,7 @@ using Xamarin.Forms.Maps;
 
 namespace TTMobileClient
 {
-    public class CustomPin : Pin
+    public class Waypoint : Pin
     {
         public string Url { get; set; }
     }
@@ -62,7 +62,7 @@ namespace TTMobileClient
 
         public ChangeHappened change;
         public List<Position> routeCoordinates;
-        public List<CustomPin> customPins;
+        public List<Waypoint> customPins;
 
         public ChangeHappened Change
         {
@@ -70,7 +70,7 @@ namespace TTMobileClient
             set { change = value; OnPropertyChanged(); }
         }
 
-        public List<CustomPin> CustomPins
+        public List<Waypoint> CustomPins
         {
             get { return customPins; }
             set { customPins = value; OnPropertyChanged(); }
@@ -84,11 +84,11 @@ namespace TTMobileClient
 
        public CustomMap(MapSpan region) : base(region)
        {
-           CustomPins = new List<CustomPin>();
+           CustomPins = new List<Waypoint>();
            routeCoordinates = new List<Position>();
        }
 
-       public void AddPin(CustomPin newPin)
+       public void AddPin(Waypoint newPin)
        {
             customPins.Add(newPin);
             Change = new ChangeHappened(){addedObject = newPin};

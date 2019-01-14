@@ -7,9 +7,9 @@ namespace TTMobileClient.UWP
 {
     public sealed partial class XamarinMapOverlay : UserControl
     {
-        CustomPin customPin;
+        Waypoint customPin;
 
-        public XamarinMapOverlay(CustomPin pin)
+        public XamarinMapOverlay(Waypoint pin)
         {
             this.InitializeComponent();
             customPin = pin;

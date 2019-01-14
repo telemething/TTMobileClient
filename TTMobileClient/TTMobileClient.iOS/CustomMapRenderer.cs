@@ -19,7 +19,7 @@ namespace TTMobileClient.iOS
     public class CustomMapRenderer : MapRenderer
     {
         UIView customPinView;
-        List<CustomPin> customPins;
+        List<Waypoint> customPins;
         MKPolylineRenderer polylineRenderer;
         private readonly UITapGestureRecognizer _tapRecogniser;
 
@@ -284,7 +284,7 @@ namespace TTMobileClient.iOS
         ///
         //*********************************************************************
 
-        CustomPin GetCustomPin(MKPointAnnotation annotation)
+        Waypoint GetCustomPin(MKPointAnnotation annotation)
         {
             var position = new Position(annotation.Coordinate.Latitude, 
                 annotation.Coordinate.Longitude);

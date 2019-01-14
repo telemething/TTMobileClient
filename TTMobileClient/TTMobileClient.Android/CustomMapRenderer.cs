@@ -20,7 +20,7 @@ namespace TTMobileClient.Droid
 {
     public class CustomMapRenderer : MapRenderer, GoogleMap.IInfoWindowAdapter
     {
-        List<CustomPin> customPins;
+        List<Waypoint> customPins;
         List<Position> routeCoordinates;
         private bool _viewingPinInfo = false;
 
@@ -268,7 +268,7 @@ namespace TTMobileClient.Droid
         ///
         //*********************************************************************
 
-        CustomPin GetCustomPin(Marker annotation)
+        Waypoint GetCustomPin(Marker annotation)
         {
             var position = new Position(annotation.Position.Latitude, 
                 annotation.Position.Longitude);

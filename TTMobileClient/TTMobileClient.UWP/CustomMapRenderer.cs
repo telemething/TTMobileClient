@@ -18,7 +18,7 @@ namespace TTMobileClient.UWP
     {
         MapControl nativeMap;
         private CustomMap formsMap;
-        List<CustomPin> customPins;
+        List<Waypoint> customPins;
         XamarinMapOverlay mapOverlay;
         bool xamarinOverlayShown = false;
 
@@ -73,29 +73,41 @@ namespace TTMobileClient.UWP
 
                 var newObject = formsMap.change.addedObject;
 
-                if (newObject is CustomPin newPin)
-                {
-                    var snPoint = new Geopoint(
-                        new BasicGeoposition
-                        {
-                            Latitude = newPin.Position.Latitude,
-                            Longitude = newPin.Position.Longitude
-                        });
-
-                    var mapIcon = new MapIcon
-                    {
-                        Image = RandomAccessStreamReference.CreateFromUri(
-                            new Uri("ms-appx:///pin.png")),
-                        CollisionBehaviorDesired = 
-                            MapElementCollisionBehavior.RemainVisible,
-                        Location = snPoint,
-                        NormalizedAnchorPoint = 
-                            new Windows.Foundation.Point(0.5, 1.0)
-                    };
-
-                    nativeMap.MapElements.Add(mapIcon);
-                }
+                if (newObject is Waypoint newPin)
+                    AddPin(newPin);
             }
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="newPin"></param>
+        ///
+        //*********************************************************************
+
+        private void AddPin(Waypoint newPin)
+        {
+            var snPoint = new Geopoint(
+                new BasicGeoposition
+                {
+                    Latitude = newPin.Position.Latitude,
+                    Longitude = newPin.Position.Longitude
+                });
+
+            var mapIcon = new MapIcon
+            {
+                Image = RandomAccessStreamReference.CreateFromUri(
+                    new Uri("ms-appx:///pin.png")),
+                CollisionBehaviorDesired =
+                    MapElementCollisionBehavior.RemainVisible,
+                Location = snPoint,
+                NormalizedAnchorPoint =
+                    new Windows.Foundation.Point(0.5, 1.0)
+            };
+
+            nativeMap.MapElements.Add(mapIcon);
         }
 
         //*********************************************************************
@@ -252,7 +264,7 @@ namespace TTMobileClient.UWP
         ///
         //*********************************************************************
 
-        CustomPin GetCustomPin(BasicGeoposition position)
+        Waypoint GetCustomPin(BasicGeoposition position)
         {
             var pos = new Position(position.Latitude, position.Longitude);
             foreach (var pin in customPins)
