@@ -50,12 +50,25 @@ namespace TTMobileClient
         }
     }
 
+    public class ChangeHappened
+    {
+        public int itemNumber;
+        public object addedObject;
+    }
+
     public class CustomMap : Map
     {
         public event EventHandler<OnMapClickEventArgs> OnMapClick;
 
+        public ChangeHappened change;
         public List<Position> routeCoordinates;
         public List<CustomPin> customPins;
+
+        public ChangeHappened Change
+        {
+            get { return change; }
+            set { change = value; OnPropertyChanged(); }
+        }
 
         public List<CustomPin> CustomPins
         {
@@ -73,6 +86,12 @@ namespace TTMobileClient
        {
            CustomPins = new List<CustomPin>();
            routeCoordinates = new List<Position>();
+       }
+
+       public void AddPin(CustomPin newPin)
+       {
+            customPins.Add(newPin);
+            Change = new ChangeHappened(){addedObject = newPin};
        }
 
        public void MapClickCallback(double lat, double lon, double alt)

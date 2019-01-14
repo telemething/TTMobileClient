@@ -51,8 +51,10 @@ namespace TTMobileClient.UWP
                     foreach (var position in formsMap.RouteCoordinates)
                     {
                         coordinates.Add(new BasicGeoposition()
-                            { Latitude = position.Latitude,
-                                Longitude = position.Longitude });
+                        {
+                            Latitude = position.Latitude,
+                            Longitude = position.Longitude
+                        });
                     }
 
                     var polyline = new MapPolyline();
@@ -61,6 +63,37 @@ namespace TTMobileClient.UWP
                     polyline.StrokeThickness = 5;
                     polyline.Path = new Geopath(coordinates);
                     nativeMap.MapElements.Add(polyline);
+                }
+            }
+
+            if (e.PropertyName.Equals("Change"))
+            {
+                formsMap = (CustomMap)sender;
+                nativeMap = Control as MapControl;
+
+                var newObject = formsMap.change.addedObject;
+
+                if (newObject is CustomPin newPin)
+                {
+                    var snPoint = new Geopoint(
+                        new BasicGeoposition
+                        {
+                            Latitude = newPin.Position.Latitude,
+                            Longitude = newPin.Position.Longitude
+                        });
+
+                    var mapIcon = new MapIcon
+                    {
+                        Image = RandomAccessStreamReference.CreateFromUri(
+                            new Uri("ms-appx:///pin.png")),
+                        CollisionBehaviorDesired = 
+                            MapElementCollisionBehavior.RemainVisible,
+                        Location = snPoint,
+                        NormalizedAnchorPoint = 
+                            new Windows.Foundation.Point(0.5, 1.0)
+                    };
+
+                    nativeMap.MapElements.Add(mapIcon);
                 }
             }
         }
@@ -180,7 +213,7 @@ namespace TTMobileClient.UWP
                         throw new Exception("Custom pin not found");
                     }
 
-                    if (customPin.Id.ToString() == "Xamarin")
+                    if (customPin.Id.ToString() == "Waypoint")
                     {
                         if (mapOverlay == null)
                         {

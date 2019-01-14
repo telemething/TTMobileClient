@@ -191,7 +191,7 @@ namespace TTMobileClient.Views
 
         private void DropPin(double lat, double lon, double alt)
         {
-            var pin = new CustomPin
+            _map.AddPin( new CustomPin
             {
                 Type = PinType.Place,
                 Position = new Position(lat, lon),
@@ -199,11 +199,13 @@ namespace TTMobileClient.Views
                 Address = $"Lat: {lat}, Lon: {lon}, alt: {alt}",
                 Id = "Waypoint",
                 Url = "http://xamarin.com/about/"
-            };
+            });
 
             //_map.CustomPins = new List<CustomPin> { pin };
+            //_map.Pins.Add(pin);
 
-            _map.Pins.Add(pin);
+            //_map.CustomPins.Add(pin);
+            //_map.Change = new ChangeHappened(){addedObject = pin};
         }
 
         //*********************************************************************
