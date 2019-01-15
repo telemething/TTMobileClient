@@ -58,7 +58,55 @@ namespace TTMobileClient.Droid
                 routeCoordinates = formsMap.RouteCoordinates;
                 Control.GetMapAsync(this);
             }
+
+            if (e.PropertyName.Equals("Change"))
+            {
+                var formsMap = (CustomMap)sender;
+                var newObject = formsMap.change.addedObject;
+
+
+                if (newObject is Waypoint newPin)
+                {
+                    customPins.Add(newPin);
+                    formsMap.Pins.Add(newPin);
+                    Control.GetMapAsync(this);
+                }
+            }
         }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="newPin"></param>
+        ///
+        //*********************************************************************
+
+        /*private void AddPin(Waypoint newPin)
+        {
+            var snPoint = new Geopoint(
+                new BasicGeoposition
+                {
+                    Latitude = newPin.Position.Latitude,
+                    Longitude = newPin.Position.Longitude
+                });
+
+            var mapIcon = new MapIcon
+            {
+                Image = RandomAccessStreamReference.CreateFromUri(
+                    new Uri("ms-appx:///pin.png")),
+                CollisionBehaviorDesired =
+                    MapElementCollisionBehavior.RemainVisible,
+                Location = snPoint,
+                NormalizedAnchorPoint =
+                    new Windows.Foundation.Point(0.5, 1.0)
+            };
+
+            nativeMap.MapElements.Add(mapIcon);
+        }*/
+
+
 
         //*********************************************************************
         ///
