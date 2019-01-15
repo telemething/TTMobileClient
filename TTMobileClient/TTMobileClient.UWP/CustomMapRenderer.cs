@@ -136,7 +136,7 @@ namespace TTMobileClient.UWP
             {
                 formsMap = (CustomMap)e.NewElement;
                 nativeMap = Control as MapControl;
-                customPins = formsMap.CustomPins;
+                customPins = formsMap.Waypoints;
 
                 nativeMap.Children.Clear();
 

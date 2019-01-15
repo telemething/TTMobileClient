@@ -191,7 +191,7 @@ namespace TTMobileClient.Views
 
         private void AddWaypoint(double lat, double lon, double alt)
         {
-            _map.AddPin( new Waypoint
+            _map.AddWaypoint( new Waypoint
             {
                 Type = PinType.Place,
                 Position = new Position(lat, lon),
@@ -490,42 +490,6 @@ namespace TTMobileClient.Views
         ///
         //*********************************************************************
 
-        private async void SendMissiony()
-        {
-            Waypoints waypoints = new Waypoints();
-
-            waypoints.StartNewMission();
-            waypoints.AddWaypoint(Mavros.Command.NAV_TAKEOFF, 
-                _missionStatus.x_lat, _missionStatus.y_long, 10, 
-                true, true, 5, 0, 0, 0);
-            waypoints.AddWaypoint(Mavros.Command.NAV_WAYPOINT, 
-                90, 25, 10, 
-                false, true, 5, 0, 0, 0);
-            waypoints.AddWaypoint(Mavros.Command.NAV_WAYPOINT, 
-                180, 25, 10, 
-                false, true, 5, 0, 0, 0);
-            waypoints.AddWaypoint(Mavros.Command.NAV_LAND, 
-                270, 25, 10, 
-                false, true, 5, 0, 0, 0);
-
-            ConnectToMav();
-            _rosClient.CallService<Waypoints.WaypointReqResp>(waypoints,
-                resp => {
-                    if (!resp.success)
-                        Xamarin.Forms.Device.BeginInvokeOnMainThread(
-                            () => App.Current.MainPage.DisplayAlert(
-                                "Error", "Unable to send waypoints", "Ok"));
-                });
-        }
-
-        //*********************************************************************
-        ///
-        /// <summary>
-        /// 
-        /// </summary>
-        ///
-        //*********************************************************************
-
         private async void SendMission()
         {
             var waypoints = new Waypoints();
@@ -538,7 +502,7 @@ namespace TTMobileClient.Views
                 true, true, 5, 0, 0, 0);
 
             // travel to each waypoint
-            foreach (var routeCoord in _map.customPins)
+            foreach (var routeCoord in _map.Waypoints)
                 waypoints.AddWaypoint(Mavros.Command.NAV_WAYPOINT,
                     routeCoord.Position.Latitude, routeCoord.Position.Longitude, 30, 
                     false, true, 5, 0, 0, 0);
@@ -745,7 +709,7 @@ namespace TTMobileClient.Views
                 Url = "http://xamarin.com/about/"
             };
 
-            _map.CustomPins = new List<Waypoint> { pin };
+            _map.Waypoints = new List<Waypoint> { pin };
         }
 
         //*********************************************************************
@@ -758,7 +722,7 @@ namespace TTMobileClient.Views
 
         private void TestDropCustomPin()
         {
-            _map.Pins.Add(_map.CustomPins.First());
+            _map.Pins.Add(_map.Waypoints.First());
             _map.MoveToRegion(MapSpan.FromCenterAndRadius(
                 new Position(37.79752, -122.40183), Distance.FromMiles(1.0)));
         }

@@ -18,6 +18,12 @@ namespace TTMobileClient
         public string Url { get; set; }
     }
 
+    public class TrackedObject : Pin
+    {
+        public string Name { get; set; }
+        public object tag { get; set; }
+    }
+
     public class OnMapClickEventArgs : EventArgs
     {
         private double _lat;
@@ -54,6 +60,7 @@ namespace TTMobileClient
     {
         public int itemNumber;
         public object addedObject;
+        public object removedObject;
     }
 
     public class CustomMap : Map
@@ -62,7 +69,7 @@ namespace TTMobileClient
 
         public ChangeHappened change;
         public List<Position> routeCoordinates;
-        public List<Waypoint> customPins;
+        private List<Waypoint> _Waypoints;
 
         public ChangeHappened Change
         {
@@ -70,10 +77,10 @@ namespace TTMobileClient
             set { change = value; OnPropertyChanged(); }
         }
 
-        public List<Waypoint> CustomPins
+        public List<Waypoint> Waypoints
         {
-            get { return customPins; }
-            set { customPins = value; OnPropertyChanged(); }
+            get { return _Waypoints; }
+            set { _Waypoints = value; OnPropertyChanged(); }
         }
 
         public List<Position> RouteCoordinates
@@ -84,14 +91,14 @@ namespace TTMobileClient
 
        public CustomMap(MapSpan region) : base(region)
        {
-           CustomPins = new List<Waypoint>();
+           Waypoints = new List<Waypoint>();
            routeCoordinates = new List<Position>();
        }
 
-       public void AddPin(Waypoint newPin)
+       public void AddWaypoint(Waypoint waypoint)
        {
-            customPins.Add(newPin);
-            Change = new ChangeHappened(){addedObject = newPin};
+            _Waypoints.Add(waypoint);
+            Change = new ChangeHappened(){addedObject = waypoint };
        }
 
        public void MapClickCallback(double lat, double lon, double alt)

@@ -130,7 +130,7 @@ namespace TTMobileClient.Droid
             if (e.NewElement != null)
             {
                 var formsMap = (CustomMap)e.NewElement;
-                customPins = formsMap.CustomPins;
+                customPins = formsMap.Waypoints;
                 Control.GetMapAsync(this);
             }
         }
