@@ -10,6 +10,8 @@ namespace TTMobileClient.iOS
 {
     public class CustomMKAnnotationView : MKAnnotationView
     {
+        public bool isWaypoint { get; set; }
+
         public string Id { get; set; }
 
         public string Url { get; set; }

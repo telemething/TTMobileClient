@@ -12,16 +12,20 @@ using Xamarin.Forms.Maps;
 using Xamarin.Forms.Maps.iOS;
 using Xamarin.Forms.Platform.iOS;
 using CoreLocation;
+using Foundation;
 
 [assembly: ExportRenderer(typeof(CustomMap), typeof(CustomMapRenderer))]
 namespace TTMobileClient.iOS
 {
     public class CustomMapRenderer : MapRenderer
     {
+        private int _pinDropDwellTime = 500;
+
         UIView customPinView;
         List<Waypoint> customPins;
         MKPolylineRenderer polylineRenderer;
         private readonly UITapGestureRecognizer _tapRecogniser;
+        private bool _viewingPinInfo = false;
 
         //*********************************************************************
         ///
@@ -33,6 +37,7 @@ namespace TTMobileClient.iOS
 
         public CustomMapRenderer()
         {
+            customPins = new List<Waypoint>(4);
             _tapRecogniser = new UITapGestureRecognizer(OnTap)
             {
                 NumberOfTapsRequired = 1,
@@ -51,13 +56,27 @@ namespace TTMobileClient.iOS
 
         private void OnTap(UITapGestureRecognizer recognizer)
         {
+            // if user is viewing pin info, then an outside click just clears
+            // the pin info, and we don't drop a new pin
+            if (_viewingPinInfo)
+                return;
+
             var cgPoint = recognizer.LocationInView(Control);
             var mapView = (MKMapView)Control;
             var location = mapView.ConvertPoint(cgPoint, Control);
 
-            //*** TODO * Make sure we didn't click on an existing pin
+            // Absurd hack to accomodate annotation event occuring after pin
+            // drop event
+            var timer = NSTimer.CreateTimer(
+                new TimeSpan(0, 0, 0, 0, _pinDropDwellTime),
+                nsTimer =>
+                {
+                    if (!_viewingPinInfo)
+                        ((CustomMap)Element).MapClickCallback(
+                            location.Latitude, location.Longitude);
+                });
 
-            //((CustomMap)Element).MapClickCallback(location.Latitude, location.Longitude);
+            NSRunLoop.Main.AddTimer(timer, NSRunLoopMode.Common);
         }
 
         //*********************************************************************
@@ -70,10 +89,22 @@ namespace TTMobileClient.iOS
         ///
         //*********************************************************************
 
-        protected override void OnElementPropertyChanged(object sender, PropertyChangedEventArgs e)
+        protected override void OnElementPropertyChanged(object sender, 
+            PropertyChangedEventArgs e)
         {
             base.OnElementPropertyChanged(sender, e);
 
+            if (e.PropertyName.Equals("Change"))
+            {
+                var formsMap = (CustomMap)sender;
+                var newObject = formsMap.change.addedObject;
+
+                if (newObject is Waypoint newPin)
+                {
+                    customPins.Add(newPin);
+                    formsMap.Pins.Add(newPin);
+                }
+            }
             if (e.PropertyName.Equals("RouteCoordinates"))
             {
                 var formsMap = (CustomMap)sender;
@@ -84,12 +115,14 @@ namespace TTMobileClient.iOS
 
                 nativeMap.OverlayRenderer = GetOverlayRenderer;
 
-                CLLocationCoordinate2D[] coords = new CLLocationCoordinate2D[formsMap.RouteCoordinates.Count];
+                CLLocationCoordinate2D[] coords = 
+                    new CLLocationCoordinate2D[formsMap.RouteCoordinates.Count];
 
                 int index = 0;
                 foreach (var position in formsMap.RouteCoordinates)
                 {
-                    coords[index] = new CLLocationCoordinate2D(position.Latitude, position.Longitude);
+                    coords[index] = new CLLocationCoordinate2D(
+                        position.Latitude, position.Longitude);
                     index++;
                 }
 
@@ -154,7 +187,10 @@ namespace TTMobileClient.iOS
             {
                 var formsMap = (CustomMap)e.NewElement;
                 var nativeMap = Control as MKMapView;
-                customPins = formsMap.CustomPins;
+
+                //customPins = formsMap.CustomPins;
+
+                //if(e is Waypoint)
 
                 nativeMap.GetViewForAnnotation = GetViewForAnnotation;
                 nativeMap.CalloutAccessoryControlTapped += OnCalloutAccessoryControlTapped;
@@ -200,6 +236,8 @@ namespace TTMobileClient.iOS
                     LeftCalloutAccessoryView = new UIImageView(UIImage.FromFile("monkey.png")),
                     RightCalloutAccessoryView = UIButton.FromType(UIButtonType.DetailDisclosure)
                 };
+
+                ((CustomMKAnnotationView)annotationView).isWaypoint = true;
                 ((CustomMKAnnotationView)annotationView).Id = customPin.Id.ToString();
                 ((CustomMKAnnotationView)annotationView).Url = customPin.Url;
             }
@@ -243,8 +281,11 @@ namespace TTMobileClient.iOS
             var customView = e.View as CustomMKAnnotationView;
             customPinView = new UIView();
 
-            if (customView.Id == "Xamarin")
+            //if (customView.Id == "Xamarin")
+            if (customView.isWaypoint)
             {
+                _viewingPinInfo = true;
+
                 customPinView.Frame = new CGRect(0, 0, 200, 84);
                 var image = new UIImageView(new CGRect(0, 0, 200, 84));
                 image.Image = UIImage.FromFile("xamarin.png");
@@ -271,6 +312,8 @@ namespace TTMobileClient.iOS
                 customPinView.RemoveFromSuperview();
                 customPinView.Dispose();
                 customPinView = null;
+
+                _viewingPinInfo = false;
             }
         }
 
