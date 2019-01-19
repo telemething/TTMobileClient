@@ -62,7 +62,7 @@ namespace TTMobileClient.Droid
             if (e.PropertyName.Equals("Change"))
             {
                 var formsMap = (CustomMap)sender;
-                var newObject = formsMap.change.addedObject;
+                var newObject = formsMap.change.SubjectObject;
 
 
                 if (newObject is Waypoint newPin)

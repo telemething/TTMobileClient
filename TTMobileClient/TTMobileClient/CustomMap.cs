@@ -20,8 +20,11 @@ namespace TTMobileClient
 
     public class TrackedObject : Pin
     {
+        public string UniqueId;
+        public string Url { get; set; }
         public string Name { get; set; }
         public object tag { get; set; }
+        public object nativeMapElement { get; set; }
     }
 
     public class OnMapClickEventArgs : EventArgs
@@ -58,9 +61,16 @@ namespace TTMobileClient
 
     public class ChangeHappened
     {
-        public int itemNumber;
-        public object addedObject;
-        public object removedObject;
+        public enum ChangeTypeEnum { None, Added, Changed, Removed }
+        public ChangeTypeEnum ChangeType;
+        public int ItemNumber;
+        public object SubjectObject;
+
+        public ChangeHappened(object subjectObject, ChangeTypeEnum changeType)
+        {
+            SubjectObject = subjectObject;
+            ChangeType = changeType;
+        }
     }
 
     public class CustomMap : Map
@@ -70,6 +80,7 @@ namespace TTMobileClient
         public ChangeHappened change;
         public List<Position> routeCoordinates;
         private List<Waypoint> _Waypoints;
+        private List<TrackedObject> _TrackedObjects;
 
         public ChangeHappened Change
         {
@@ -83,6 +94,12 @@ namespace TTMobileClient
             set { _Waypoints = value; OnPropertyChanged(); }
         }
 
+        public List<TrackedObject> TrackedObjects
+        {
+            get { return _TrackedObjects; }
+            set { _TrackedObjects = value; OnPropertyChanged(); }
+        }
+
         public List<Position> RouteCoordinates
         {
             get { return routeCoordinates; }
@@ -91,14 +108,21 @@ namespace TTMobileClient
 
        public CustomMap(MapSpan region) : base(region)
        {
+           TrackedObjects = new List<TrackedObject>();
            Waypoints = new List<Waypoint>();
            routeCoordinates = new List<Position>();
        }
 
        public void AddWaypoint(Waypoint waypoint)
        {
-            _Waypoints.Add(waypoint);
-            Change = new ChangeHappened(){addedObject = waypoint };
+           _Waypoints.Add(waypoint);
+           Change = new ChangeHappened(waypoint, ChangeHappened.ChangeTypeEnum.Added);
+       }
+
+       public void AddTrackedObject(TrackedObject trackedObject)
+       {
+            _TrackedObjects.Add(trackedObject);
+            Change = new ChangeHappened(trackedObject, ChangeHappened.ChangeTypeEnum.Added);
        }
 
        public void MapClickCallback(double lat, double lon, double alt)

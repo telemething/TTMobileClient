@@ -189,9 +189,20 @@ namespace TTMobileClient.Views
             AddWaypoint(e.Lat, e.Lon, e.Alt);
         }
 
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="lat"></param>
+        /// <param name="lon"></param>
+        /// <param name="alt"></param>
+        ///
+        //*********************************************************************
+
         private void AddWaypoint(double lat, double lon, double alt)
         {
-            _map.AddWaypoint( new Waypoint
+            _map.AddWaypoint(new Waypoint
             {
                 Type = PinType.Place,
                 Position = new Position(lat, lon),
@@ -200,12 +211,38 @@ namespace TTMobileClient.Views
                 Id = "Waypoint",
                 Url = "http://xamarin.com/about/"
             });
+        }
 
-            //_map.CustomPins = new List<CustomPin> { pin };
-            //_map.Pins.Add(pin);
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="uniqueId"></param>
+        /// <param name="lat"></param>
+        /// <param name="lon"></param>
+        /// <param name="alt"></param>
+        /// <returns></returns>
+        ///
+        //*********************************************************************
 
-            //_map.CustomPins.Add(pin);
-            //_map.Change = new ChangeHappened(){addedObject = pin};
+        private TrackedObject AddTrackedObject(string uniqueId, 
+            double lat, double lon, double alt)
+        {
+            TrackedObject to = new TrackedObject()
+            {
+                Type = PinType.Generic,
+                Position = new Position(lat, lon),
+                Label = "UAV",
+                Address = $"Lat: {lat}, Lon: {lon}, alt: {alt}",
+                Id = "UAV",
+                Url = "http://www.telemething.com/",
+                UniqueId = uniqueId
+            };
+
+            _map.AddTrackedObject(to);
+
+            return to;
         }
 
         //*********************************************************************
@@ -256,14 +293,14 @@ namespace TTMobileClient.Views
         {
             Plugin.Geolocator.Abstractions.Position pos;
 
-
             try
             {
                 pos = await Services.Geolocation.GetCurrentPosition();
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error", "Error: " + ex.Message, "Ok");
+                await App.Current.MainPage.DisplayAlert(
+                    "Error", "Error: " + ex.Message, "Ok");
                 Console.WriteLine(ex);
                 return;
             }
@@ -284,14 +321,16 @@ namespace TTMobileClient.Views
         private async Task<bool> ShowMapOld()
         {
             if (!await GetPermissions(new List<Permission>()
-                { Permission.Location, Permission.LocationWhenInUse, Permission.LocationAlways }))
+                { Permission.Location, Permission.LocationWhenInUse,
+                    Permission.LocationAlways }))
                 return false;
 
             try
             {
                 var map = new Map(
                     MapSpan.FromCenterAndRadius(
-                        new Position(37, -122), Distance.FromMiles(0.3)))
+                        new Position(37, -122), 
+                        Distance.FromMiles(0.3)))
                 {
                     IsShowingUser = true,
                     HeightRequest = 100,
@@ -308,7 +347,8 @@ namespace TTMobileClient.Views
             catch (System.Exception ex)
             {
                 //logger.DebugLogError("Fatal Error on permissions: " + ex.Message);
-                await App.Current.MainPage.DisplayAlert("Error", "Error: " + ex.Message, "Ok");
+                await App.Current.MainPage.DisplayAlert(
+                    "Error", "Error: " + ex.Message, "Ok");
                 return false;
             }
         }
@@ -336,7 +376,9 @@ namespace TTMobileClient.Views
                     {
                         if (await CrossPermissions.Current.ShouldShowRequestPermissionRationaleAsync(permission))
                         {
-                            await App.Current.MainPage.DisplayAlert("Need a permission", $"Required: {permission.ToString()}", "OK");
+                            await App.Current.MainPage.DisplayAlert(
+                                "Need a permission", $"Required: " +
+                                                     $"{permission.ToString()}", "OK");
                         }
 
                         var results = await CrossPermissions.Current.RequestPermissionsAsync(permission);
@@ -346,7 +388,9 @@ namespace TTMobileClient.Views
 
                         if (!(status == PermissionStatus.Granted || status == PermissionStatus.Unknown))
                         {
-                            await App.Current.MainPage.DisplayAlert("Permission Denied", "Can not continue, try again.", "OK");
+                            await App.Current.MainPage.DisplayAlert(
+                                "Permission Denied", 
+                                "Can not continue, try again.", "OK");
                             permissionsGranted = false;
                             break;
                         }
@@ -356,7 +400,8 @@ namespace TTMobileClient.Views
             }
             catch (System.Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error", "Error: " + ex.Message, "Ok");
+                await App.Current.MainPage.DisplayAlert(
+                    "Error", "Error: " + ex.Message, "Ok");
                 //logger.DebugLogError("Fatal Error on permissions: " + ex.Message);
             }
 
@@ -626,7 +671,16 @@ namespace TTMobileClient.Views
         private readonly Geodesic _geo = Geodesic.WGS84;
         private bool _moveMapToTrackedObject = true;
 
-        private void ShowTrackedObjectLocation(double lat, double lon, double minDelta)
+
+        //*** single tracked pin test ***
+
+        private TrackedObject singleTrackedObject;
+
+        //*******************************
+
+        /*private TrackedObject pin;
+
+        private void ShowTrackedObjectLocation_old(double lat, double lon, double minDelta)
         {
             try
             {
@@ -637,14 +691,73 @@ namespace TTMobileClient.Views
                 lastLon = lon;
 
                 var position = new Position(lat, lon); // Latitude, Longitude
-                var pin = new Pin
+
+                if (null == singleTrackedObject)
                 {
-                    Type = PinType.Place,
-                    Position = position,
-                    Label = "Dr. Elkman",
-                    Address = $"Time:{DateTime.UtcNow.ToString()}"
-                };
-                _map.Pins.Add(pin);
+                    var pin = new Pin
+                    {
+                        Type = PinType.Place,
+                        Position = position,
+                        Label = "Dr. Elkman",
+                        Address = $"Time:{DateTime.UtcNow.ToString()}"
+                    };
+
+                    singleTrackedObject = pin;
+                    _map.Pins.Add(pin);
+                }
+                else
+                {
+                    singleTrackedObject.Position = position;
+                }
+
+                if (_moveMapToTrackedObject)
+                {
+                    _map.MoveToRegion(
+                        MapSpan.FromCenterAndRadius(
+                            position, Distance.FromMiles(1)));
+
+                    _moveMapToTrackedObject = false;
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }*/
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="lat"></param>
+        /// <param name="lon"></param>
+        /// <param name="minDelta"></param>
+        ///
+        //*********************************************************************
+
+        private void ShowTrackedObjectLocation(double lat, double lon, double minDelta)
+        {
+            try
+            {
+                if (minDelta > _geo.Inverse(
+                        lastLat, lastLon, lat, lon).Distance)
+                    return;
+
+                lastLat = lat;
+                lastLon = lon;
+
+                var position = new Position(lat, lon); // Latitude, Longitude
+
+                if (null == singleTrackedObject)
+                    singleTrackedObject = AddTrackedObject(
+                        "singleTrackedObject", lat, lon, 0);
+                else
+                {
+                    singleTrackedObject.Position = position;
+                    _map.Change = new ChangeHappened(singleTrackedObject, 
+                        ChangeHappened.ChangeTypeEnum.Changed);
+                }
 
                 if (_moveMapToTrackedObject)
                 {
@@ -724,7 +837,8 @@ namespace TTMobileClient.Views
         {
             _map.Pins.Add(_map.Waypoints.First());
             _map.MoveToRegion(MapSpan.FromCenterAndRadius(
-                new Position(37.79752, -122.40183), Distance.FromMiles(1.0)));
+                new Position(37.79752, -122.40183), 
+                Distance.FromMiles(1.0)));
         }
 
         //*********************************************************************

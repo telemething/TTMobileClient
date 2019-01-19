@@ -6,6 +6,7 @@ using TTMobileClient.UWP;
 using System.ComponentModel;
 using Windows.Devices.Geolocation;
 using Windows.Storage.Streams;
+using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls.Maps;
 using Xamarin.Forms.Maps;
 using Xamarin.Forms.Maps.UWP;
@@ -18,9 +19,24 @@ namespace TTMobileClient.UWP
     {
         MapControl nativeMap;
         private CustomMap formsMap;
-        List<Waypoint> customPins;
+        List<Waypoint> _waypoints;
+        List<TrackedObject> _trackedObjects;
         XamarinMapOverlay mapOverlay;
         bool xamarinOverlayShown = false;
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// 
+        //*********************************************************************
+
+        public CustomMapRenderer()
+        {
+            _waypoints = new List<Waypoint>(4);
+            _trackedObjects = new List<TrackedObject>(1);
+        }
 
         //*********************************************************************
         ///
@@ -71,11 +87,85 @@ namespace TTMobileClient.UWP
                 formsMap = (CustomMap)sender;
                 nativeMap = Control as MapControl;
 
-                var newObject = formsMap.change.addedObject;
+                var newObject = formsMap.change.SubjectObject;
 
                 if (newObject is Waypoint newPin)
-                    AddPin(newPin);
+                    switch (formsMap.change.ChangeType)
+                    {
+                        case ChangeHappened.ChangeTypeEnum.Added:
+                            AddPin(newPin);
+                            break;
+                    }
+
+                if (newObject is TrackedObject to)
+                    switch (formsMap.change.ChangeType)
+                    {
+                        case ChangeHappened.ChangeTypeEnum.Added:
+                            AddTrackedObject(to);
+                            break;
+                        case ChangeHappened.ChangeTypeEnum.Changed:
+                            ChangeTrackedObject(to);
+                            break;
+                    }
             }
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="newPin"></param>
+        ///
+        //*********************************************************************
+
+        private void AddTrackedObject(TrackedObject newTO)
+        {
+            var mapIcon = new MapIcon
+            {
+                Image = RandomAccessStreamReference.CreateFromUri(
+                    new Uri("ms-appx:///uav.png")),
+                CollisionBehaviorDesired =
+                    MapElementCollisionBehavior.RemainVisible,
+                Location = new Geopoint(
+                    new BasicGeoposition
+                    {
+                        Latitude = newTO.Position.Latitude,
+                        Longitude = newTO.Position.Longitude
+                    }),
+                NormalizedAnchorPoint =
+                    new Windows.Foundation.Point(0.5, 1.0)
+            };
+
+            newTO.nativeMapElement = mapIcon;
+
+            _trackedObjects.Add((newTO));
+
+            nativeMap.MapElements.Add(mapIcon);
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="newPin"></param>
+        ///
+        //*********************************************************************
+
+        private void ChangeTrackedObject(TrackedObject changedTO)
+        {
+            var trackedObject = GetTrackedObject(changedTO.UniqueId);
+
+            if (trackedObject.nativeMapElement is MapIcon mapIcon)
+                mapIcon.Location = new Geopoint(
+                    new BasicGeoposition
+                    {
+                        Latitude = changedTO.Position.Latitude,
+                        Longitude = changedTO.Position.Longitude
+                    });
+            else
+                throw new Exception("ChangeTrackedObject() : nativeMapElement is not a MapIcon");
         }
 
         //*********************************************************************
@@ -136,7 +226,7 @@ namespace TTMobileClient.UWP
             {
                 formsMap = (CustomMap)e.NewElement;
                 nativeMap = Control as MapControl;
-                customPins = formsMap.Waypoints;
+                _waypoints = formsMap.Waypoints;
 
                 nativeMap.Children.Clear();
 
@@ -144,7 +234,7 @@ namespace TTMobileClient.UWP
                 nativeMap.MapTapped += NativeMapOnMapTapped;
 
                 // Pins
-                foreach (var pin in customPins)
+                foreach (var pin in _waypoints)
                 {
                     var snPosition = new BasicGeoposition
                     {
@@ -219,7 +309,7 @@ namespace TTMobileClient.UWP
             {
                 if (!xamarinOverlayShown)
                 {
-                    var customPin = GetCustomPin(mapIcon.Location.Position);
+                    var customPin = GetWaypoint(mapIcon.Location.Position);
                     if (customPin == null)
                     {
                         throw new Exception("Custom pin not found");
@@ -241,7 +331,7 @@ namespace TTMobileClient.UWP
 
                         nativeMap.Children.Add(mapOverlay);
                         MapControl.SetLocation(mapOverlay, snPoint);
-                        MapControl.SetNormalizedAnchorPoint(mapOverlay, 
+                        MapControl.SetNormalizedAnchorPoint(mapOverlay,
                             new Windows.Foundation.Point(0.5, 1.0));
                         xamarinOverlayShown = true;
                     }
@@ -264,16 +354,32 @@ namespace TTMobileClient.UWP
         ///
         //*********************************************************************
 
-        Waypoint GetCustomPin(BasicGeoposition position)
+        Waypoint GetWaypoint(BasicGeoposition position)
         {
             var pos = new Position(position.Latitude, position.Longitude);
-            foreach (var pin in customPins)
-            {
+            foreach (var pin in _waypoints)
                 if (pin.Position == pos)
-                {
                     return pin;
-                }
-            }
+
+            return null;
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        ///
+        //*********************************************************************
+
+        TrackedObject GetTrackedObject(string id)
+        {
+            foreach (var to in _trackedObjects)
+                if (to.UniqueId.Equals(id))
+                    return to;
+
             return null;
         }
     }

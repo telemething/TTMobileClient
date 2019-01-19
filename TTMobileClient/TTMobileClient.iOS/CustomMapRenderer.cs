@@ -22,7 +22,7 @@ namespace TTMobileClient.iOS
         private int _pinDropDwellTime = 500;
 
         UIView customPinView;
-        List<Waypoint> customPins;
+        List<Waypoint> _waypoints;
         MKPolylineRenderer polylineRenderer;
         private readonly UITapGestureRecognizer _tapRecogniser;
         private bool _viewingPinInfo = false;
@@ -37,7 +37,7 @@ namespace TTMobileClient.iOS
 
         public CustomMapRenderer()
         {
-            customPins = new List<Waypoint>(4);
+            _waypoints = new List<Waypoint>(4);
             _tapRecogniser = new UITapGestureRecognizer(OnTap)
             {
                 NumberOfTapsRequired = 1,
@@ -97,12 +97,12 @@ namespace TTMobileClient.iOS
             if (e.PropertyName.Equals("Change"))
             {
                 var formsMap = (CustomMap)sender;
-                var newObject = formsMap.change.addedObject;
+                var newObject = formsMap.change.SubjectObject;
 
-                if (newObject is Waypoint newPin)
+                if (newObject is Waypoint newWaypoint)
                 {
-                    customPins.Add(newPin);
-                    formsMap.Pins.Add(newPin);
+                    _waypoints.Add(newWaypoint);
+                    formsMap.Pins.Add(newWaypoint);
                 }
             }
             if (e.PropertyName.Equals("RouteCoordinates"))
@@ -174,6 +174,7 @@ namespace TTMobileClient.iOS
             if (e.OldElement != null)
             {
                 var nativeMap = Control as MKMapView;
+
                 nativeMap.GetViewForAnnotation = null;
                 nativeMap.CalloutAccessoryControlTapped -= OnCalloutAccessoryControlTapped;
                 nativeMap.DidSelectAnnotationView -= OnDidSelectAnnotationView;
@@ -187,10 +188,6 @@ namespace TTMobileClient.iOS
             {
                 var formsMap = (CustomMap)e.NewElement;
                 var nativeMap = Control as MKMapView;
-
-                //customPins = formsMap.CustomPins;
-
-                //if(e is Waypoint)
 
                 nativeMap.GetViewForAnnotation = GetViewForAnnotation;
                 nativeMap.CalloutAccessoryControlTapped += OnCalloutAccessoryControlTapped;
@@ -218,6 +215,10 @@ namespace TTMobileClient.iOS
             MKAnnotationView annotationView = null;
 
             if (annotation is MKUserLocation)
+                return null;
+
+            // If we have no custom pins the this is not a custom pin
+            if (0 == _waypoints.Count)
                 return null;
 
             var customPin = GetCustomPin(annotation as MKPointAnnotation);
@@ -331,7 +332,8 @@ namespace TTMobileClient.iOS
         {
             var position = new Position(annotation.Coordinate.Latitude, 
                 annotation.Coordinate.Longitude);
-            foreach (var pin in customPins)
+
+            foreach (var pin in _waypoints)
             {
                 if (pin.Position == position)
                 {
