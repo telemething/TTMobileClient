@@ -93,7 +93,7 @@ namespace TTMobileClient.UWP
                     switch (formsMap.change.ChangeType)
                     {
                         case ChangeHappened.ChangeTypeEnum.Added:
-                            AddPin(newPin);
+                            AddWaypoint(newPin);
                             break;
                     }
 
@@ -139,7 +139,7 @@ namespace TTMobileClient.UWP
 
             newTO.nativeMapElement = mapIcon;
 
-            _trackedObjects.Add((newTO));
+            _trackedObjects.Add(newTO);
 
             nativeMap.MapElements.Add(mapIcon);
         }
@@ -177,7 +177,7 @@ namespace TTMobileClient.UWP
         ///
         //*********************************************************************
 
-        private void AddPin(Waypoint newPin)
+        private void AddWaypoint(Waypoint newPin)
         {
             var snPoint = new Geopoint(
                 new BasicGeoposition

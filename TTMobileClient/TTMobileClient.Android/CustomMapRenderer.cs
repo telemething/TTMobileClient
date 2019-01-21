@@ -20,7 +20,8 @@ namespace TTMobileClient.Droid
 {
     public class CustomMapRenderer : MapRenderer, GoogleMap.IInfoWindowAdapter
     {
-        List<Waypoint> customPins;
+        List<Waypoint> _waypoints;
+        List<TrackedObject> _trackedObjects;
         List<Position> routeCoordinates;
         private bool _viewingPinInfo = false;
 
@@ -35,6 +36,8 @@ namespace TTMobileClient.Droid
 
         public CustomMapRenderer(Context context) : base(context)
         {
+            _waypoints = new List<Waypoint>(8);
+            _trackedObjects = new List<TrackedObject>(1);
         }
 
         //*********************************************************************
@@ -59,7 +62,7 @@ namespace TTMobileClient.Droid
                 Control.GetMapAsync(this);
             }
 
-            if (e.PropertyName.Equals("Change"))
+            /*if (e.PropertyName.Equals("Change"))
             {
                 var formsMap = (CustomMap)sender;
                 var newObject = formsMap.change.SubjectObject;
@@ -71,7 +74,70 @@ namespace TTMobileClient.Droid
                     formsMap.Pins.Add(newPin);
                     Control.GetMapAsync(this);
                 }
+            }*/
+
+            if (e.PropertyName.Equals("Change"))
+            {
+                var formsMap = (CustomMap)sender;
+                var newObject = formsMap.change.SubjectObject;
+
+                if (newObject is Waypoint newPin)
+                    switch (formsMap.change.ChangeType)
+                    {
+                        case ChangeHappened.ChangeTypeEnum.Added:
+                            _waypoints.Add(newPin);
+                            formsMap.Pins.Add(newPin);
+                            Control.GetMapAsync(this);
+                            break;
+                    }
+
+                if (newObject is TrackedObject to)
+                    switch (formsMap.change.ChangeType)
+                    {
+                        case ChangeHappened.ChangeTypeEnum.Added:
+                            AddTrackedObject(to, formsMap);
+                            break;
+                        case ChangeHappened.ChangeTypeEnum.Changed:
+                            ChangeTrackedObject(to);
+                            break;
+                    }
             }
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="to"></param>
+        /// <param name="formsMap"></param>
+        ///
+        //*********************************************************************
+
+        private void AddTrackedObject(TrackedObject to, CustomMap formsMap)
+        {
+            _trackedObjects.Add(to);
+            formsMap.Pins.Add(to);
+            Control.GetMapAsync(this);
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="changedTO"></param>
+        ///
+        //*********************************************************************
+
+        private void ChangeTrackedObject(TrackedObject changedTO)
+        {
+            var trackedObject = GetTrackedObject(changedTO.UniqueId);
+
+            trackedObject.Position = new Position(
+                changedTO.Position.Latitude, changedTO.Position.Longitude);
+
+            Control.GetMapAsync(this);
         }
 
         //*********************************************************************
@@ -130,7 +196,7 @@ namespace TTMobileClient.Droid
             if (e.NewElement != null)
             {
                 var formsMap = (CustomMap)e.NewElement;
-                customPins = formsMap.Waypoints;
+                _waypoints = formsMap.Waypoints;
                 Control.GetMapAsync(this);
             }
         }
@@ -206,10 +272,23 @@ namespace TTMobileClient.Droid
         protected override MarkerOptions CreateMarker(Pin pin)
         {
             var marker = new MarkerOptions();
-            marker.SetPosition(new LatLng(pin.Position.Latitude, pin.Position.Longitude));
-            marker.SetTitle(pin.Label);
-            marker.SetSnippet(pin.Address);
-            marker.SetIcon(BitmapDescriptorFactory.FromResource(Resource.Drawable.pin));
+            marker.SetPosition(new LatLng(
+                pin.Position.Latitude, pin.Position.Longitude));
+
+            if (pin is TrackedObject to)
+            {
+                marker.SetIcon(BitmapDescriptorFactory.
+                    FromResource(Resource.Drawable.uav));
+            }
+
+            else if (pin is Waypoint waypoint)
+            {
+                marker.SetTitle(pin.Label);
+                marker.SetSnippet(pin.Address);
+                marker.SetIcon(BitmapDescriptorFactory.
+                    FromResource(Resource.Drawable.pin));
+            }
+
             return marker;
         }
 
@@ -225,7 +304,7 @@ namespace TTMobileClient.Droid
 
         void OnInfoWindowClick(object sender, GoogleMap.InfoWindowClickEventArgs e)
         {
-            var customPin = GetCustomPin(e.Marker);
+            var customPin = GetWaypoint(e.Marker);
             if (customPin == null)
             {
                 throw new Exception("Custom pin not found");
@@ -258,7 +337,7 @@ namespace TTMobileClient.Droid
             {
                 Android.Views.View view;
 
-                var customPin = GetCustomPin(marker);
+                var customPin = GetWaypoint(marker);
                 if (customPin == null)
                 {
                     throw new Exception("Custom pin not found");
@@ -316,18 +395,36 @@ namespace TTMobileClient.Droid
         ///
         //*********************************************************************
 
-        Waypoint GetCustomPin(Marker annotation)
+        Waypoint GetWaypoint(Marker annotation)
         {
             var position = new Position(annotation.Position.Latitude, 
                 annotation.Position.Longitude);
-            foreach (var pin in customPins)
-            {
+
+            foreach (var pin in _waypoints)
                 if (pin.Position == position)
-                {
                     return pin;
-                }
-            }
+
             return null;
         }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        ///
+        //*********************************************************************
+
+        TrackedObject GetTrackedObject(string id)
+        {
+            foreach (var to in _trackedObjects)
+                if (to.UniqueId.Equals(id))
+                    return to;
+
+            return null;
+        }
+
     }
 }
