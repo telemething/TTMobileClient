@@ -8,7 +8,7 @@ using MapKit;
 
 namespace TTMobileClient.iOS
 {
-    public class CustomMKAnnotationView : MKAnnotationView
+    public class TrackedObjectAnnotationView : MKAnnotationView
     {
         public object subjectObject { get; set; }
 
@@ -16,7 +16,7 @@ namespace TTMobileClient.iOS
 
         public string Url { get; set; }
 
-        public CustomMKAnnotationView(IMKAnnotation annotation, string id)
+        public TrackedObjectAnnotationView(IMKAnnotation annotation, string id)
             : base(annotation, id)
         {
         }

@@ -66,6 +66,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="CustomMapRenderer.cs" />
+    <Compile Include="TrackedObjectAnnotationView.cs" />
     <Compile Include="CustomMKAnnotationView.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="AppDelegate.cs" />
@@ -164,5 +165,8 @@
   </ItemGroup>
   <ItemGroup>
     <BundleResource Include="Resources\xamarin.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\uav.png" />
   </ItemGroup>
 </Project>

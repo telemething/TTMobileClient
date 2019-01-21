@@ -23,6 +23,7 @@ namespace TTMobileClient.iOS
 
         UIView customPinView;
         List<Waypoint> _waypoints;
+        List<TrackedObject> _trackedObjects;
         MKPolylineRenderer polylineRenderer;
         private readonly UITapGestureRecognizer _tapRecogniser;
         private bool _viewingPinInfo = false;
@@ -38,6 +39,8 @@ namespace TTMobileClient.iOS
         public CustomMapRenderer()
         {
             _waypoints = new List<Waypoint>(4);
+            _trackedObjects = new List<TrackedObject>(1);
+
             _tapRecogniser = new UITapGestureRecognizer(OnTap)
             {
                 NumberOfTapsRequired = 1,
@@ -94,7 +97,7 @@ namespace TTMobileClient.iOS
         {
             base.OnElementPropertyChanged(sender, e);
 
-            if (e.PropertyName.Equals("Change"))
+            /*if (e.PropertyName.Equals("Change"))
             {
                 var formsMap = (CustomMap)sender;
                 var newObject = formsMap.change.SubjectObject;
@@ -104,7 +107,34 @@ namespace TTMobileClient.iOS
                     _waypoints.Add(newWaypoint);
                     formsMap.Pins.Add(newWaypoint);
                 }
+            }*/
+
+            if (e.PropertyName.Equals("Change"))
+            {
+                var formsMap = (CustomMap)sender;
+                var newObject = formsMap.change.SubjectObject;
+
+                if (newObject is Waypoint newWaypoint)
+                    switch (formsMap.change.ChangeType)
+                    {
+                        case ChangeHappened.ChangeTypeEnum.Added:
+                            _waypoints.Add(newWaypoint);
+                            formsMap.Pins.Add(newWaypoint);
+                            break;
+                    }
+
+                if (newObject is TrackedObject to)
+                    switch (formsMap.change.ChangeType)
+                    {
+                        case ChangeHappened.ChangeTypeEnum.Added:
+                            AddTrackedObject(to, formsMap);
+                            break;
+                        case ChangeHappened.ChangeTypeEnum.Changed:
+                            ChangeTrackedObject(to);
+                            break;
+                    }
             }
+
             if (e.PropertyName.Equals("RouteCoordinates"))
             {
                 var formsMap = (CustomMap)sender;
@@ -129,6 +159,39 @@ namespace TTMobileClient.iOS
                 var routeOverlay = MKPolyline.FromCoordinates(coords);
                 nativeMap.AddOverlay(routeOverlay);
             }
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="to"></param>
+        /// <param name="formsMap"></param>
+        /// 
+        //*********************************************************************
+
+        private void AddTrackedObject(TrackedObject to, CustomMap formsMap)
+        {
+            _trackedObjects.Add(to);
+            formsMap.Pins.Add(to);
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="to"></param>
+        ///
+        //*********************************************************************
+
+        private void ChangeTrackedObject(TrackedObject changedTO)
+        {
+            var trackedObject = GetTrackedObject(changedTO.UniqueId);
+
+            trackedObject.Position = new Position(
+                changedTO.Position.Latitude, changedTO.Position.Longitude);
         }
 
         //*********************************************************************
@@ -218,10 +281,71 @@ namespace TTMobileClient.iOS
                 return null;
 
             // If we have no custom pins the this is not a custom pin
+            //if (0 == _waypoints.Count)
+            //    return null;
+
+            var waypoint = GetWaypoint(annotation as MKPointAnnotation);
+            if (waypoint != null)
+            {
+                annotationView = mapView.DequeueReusableAnnotation(waypoint.Id.ToString());
+                if (annotationView == null)
+                {
+                    annotationView = new CustomMKAnnotationView(annotation, waypoint.Id.ToString())
+                    {
+                        Image = UIImage.FromFile("pin.png"),
+                        CalloutOffset = new CGPoint(0, 0),
+                        LeftCalloutAccessoryView = new UIImageView(UIImage.FromFile("monkey.png")),
+                        RightCalloutAccessoryView = UIButton.FromType(UIButtonType.DetailDisclosure)
+                    };
+
+                    ((CustomMKAnnotationView)annotationView).subjectObject = waypoint;
+                    ((CustomMKAnnotationView)annotationView).Id = waypoint.Id.ToString();
+                    ((CustomMKAnnotationView)annotationView).Url = waypoint.Url;
+                }
+
+                annotationView.CanShowCallout = true;
+                return annotationView;
+            }
+
+            var trackedObject = GetTrackedObject(annotation as MKPointAnnotation);
+            if (trackedObject != null)
+            {
+                annotationView = mapView.DequeueReusableAnnotation(trackedObject.Id.ToString());
+                if (annotationView == null)
+                {
+                    annotationView = new TrackedObjectAnnotationView(annotation, trackedObject.Id.ToString())
+                    {
+                        Image = UIImage.FromFile("uav.png"),
+                        CalloutOffset = new CGPoint(0, 0),
+                        LeftCalloutAccessoryView = new UIImageView(UIImage.FromFile("uav.png")),
+                        RightCalloutAccessoryView = UIButton.FromType(UIButtonType.DetailDisclosure)
+                    };
+
+                    ((TrackedObjectAnnotationView)annotationView).subjectObject = trackedObject;
+                    ((TrackedObjectAnnotationView)annotationView).Id = trackedObject.Id.ToString();
+                    ((TrackedObjectAnnotationView)annotationView).Url = trackedObject.Url;
+                }
+
+                annotationView.CanShowCallout = true;
+                return annotationView;
+            }
+
+            throw new Exception("Custom pin not found");      
+        }
+
+        /*protected override MKAnnotationView GetViewForAnnotation(
+            MKMapView mapView, IMKAnnotation annotation)
+        {
+            MKAnnotationView annotationView = null;
+
+            if (annotation is MKUserLocation)
+                return null;
+
+            // If we have no custom pins the this is not a custom pin
             if (0 == _waypoints.Count)
                 return null;
 
-            var customPin = GetCustomPin(annotation as MKPointAnnotation);
+            var customPin = GetWaypoint(annotation as MKPointAnnotation);
             if (customPin == null)
             {
                 throw new Exception("Custom pin not found");
@@ -245,7 +369,7 @@ namespace TTMobileClient.iOS
             annotationView.CanShowCallout = true;
 
             return annotationView;
-        }
+        }*/
 
         //*********************************************************************
         ///
@@ -279,17 +403,29 @@ namespace TTMobileClient.iOS
 
         void OnDidSelectAnnotationView(object sender, MKAnnotationViewEventArgs e)
         {
-            var customView = e.View as CustomMKAnnotationView;
+            //var customView = e.View as CustomMKAnnotationView;
             customPinView = new UIView();
 
-            //if (customView.Id == "Xamarin")
-            if (customView.isWaypoint)
+            if (e.View is CustomMKAnnotationView caView)
             {
                 _viewingPinInfo = true;
 
                 customPinView.Frame = new CGRect(0, 0, 200, 84);
-                var image = new UIImageView(new CGRect(0, 0, 200, 84));
-                image.Image = UIImage.FromFile("xamarin.png");
+                var image = new UIImageView(
+                    new CGRect(0, 0, 200, 84))
+                    { Image = UIImage.FromFile("xamarin.png")};
+                customPinView.AddSubview(image);
+                customPinView.Center = new CGPoint(0, -(e.View.Frame.Height + 75));
+                e.View.AddSubview(customPinView);
+            }
+            else if (e.View is TrackedObjectAnnotationView toaView)
+            {
+                _viewingPinInfo = true;
+
+                customPinView.Frame = new CGRect(0, 0, 200, 84);
+                var image = new UIImageView(
+                    new CGRect(0, 0, 200, 84))
+                    { Image = UIImage.FromFile("uav.png")};
                 customPinView.AddSubview(image);
                 customPinView.Center = new CGPoint(0, -(e.View.Frame.Height + 75));
                 e.View.AddSubview(customPinView);
@@ -328,18 +464,56 @@ namespace TTMobileClient.iOS
         ///
         //*********************************************************************
 
-        Waypoint GetCustomPin(MKPointAnnotation annotation)
+        Waypoint GetWaypoint(MKPointAnnotation annotation)
         {
-            var position = new Position(annotation.Coordinate.Latitude, 
+            var position = new Position(annotation.Coordinate.Latitude,
                 annotation.Coordinate.Longitude);
 
             foreach (var pin in _waypoints)
-            {
                 if (pin.Position == position)
-                {
                     return pin;
-                }
-            }
+
+            return null;
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="annotation"></param>
+        /// <returns></returns>
+        ///
+        //*********************************************************************
+
+        TrackedObject GetTrackedObject(MKPointAnnotation annotation)
+        {
+            var position = new Position(annotation.Coordinate.Latitude,
+                annotation.Coordinate.Longitude);
+
+            foreach (var pin in _trackedObjects)
+                if (pin.Position == position)
+                    return pin;
+
+            return null;
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="annotation"></param>
+        /// <returns></returns>
+        ///
+        //*********************************************************************
+
+        TrackedObject GetTrackedObject(string id)
+        {
+            foreach (var to in _trackedObjects)
+                if (to.UniqueId.Equals(id))
+                    return to;
+
             return null;
         }
     }
