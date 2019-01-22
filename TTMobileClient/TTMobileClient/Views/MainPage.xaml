@@ -26,14 +26,14 @@
             </x:Arguments>
         </NavigationPage>
 
-        <NavigationPage Title="RosBridge">
+        <NavigationPage Title="MediaViewTest">
             <NavigationPage.Icon>
                 <OnPlatform x:TypeArguments="FileImageSource">
                     <On Platform="iOS" Value="tab_about.png"/>
                 </OnPlatform>
             </NavigationPage.Icon>
             <x:Arguments>
-                <views:RosBridgeTest />
+                <views:MediaView />
             </x:Arguments>
         </NavigationPage>
 
