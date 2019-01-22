@@ -39,7 +39,9 @@ namespace TTMobileClient.Views
 
         protected override void OnAppearing()
         {
-            videoView.Source = "http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4";
+            //videoView.Source = "http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4";
+            //videoView.Source = "http://192.168.1.30:8080/stream_viewer?topic=/airsim/image_raw";
+            videoView.Source = "http://192.168.1.30:8080/stream?topic=/airsim/image_raw";
         }
 
         void PlayClicked(object sender, System.EventArgs e)
