@@ -4,7 +4,7 @@
             xmlns:views="clr-namespace:TTMobileClient.Views"
             x:Class="TTMobileClient.Views.MainPage">
     <TabbedPage.Children>
-        <!--<NavigationPage Title="Browse">
+        <NavigationPage Title="Browse">
             <NavigationPage.Icon>
                 <OnPlatform x:TypeArguments="FileImageSource">
                     <On Platform="iOS" Value="tab_feed.png"/>
@@ -34,28 +34,6 @@
             </NavigationPage.Icon>
             <x:Arguments>
                 <views:MediaView />
-            </x:Arguments>
-        </NavigationPage>
-
-        <NavigationPage Title="MediaViewTest2">
-            <NavigationPage.Icon>
-                <OnPlatform x:TypeArguments="FileImageSource">
-                    <On Platform="iOS" Value="tab_about.png"/>
-                </OnPlatform>
-            </NavigationPage.Icon>
-            <x:Arguments>
-                <views:MediaView2 />
-            </x:Arguments>
-        </NavigationPage>-->
-
-        <NavigationPage Title="WebViewTest">
-            <NavigationPage.Icon>
-                <OnPlatform x:TypeArguments="FileImageSource">
-                    <On Platform="iOS" Value="tab_about.png"/>
-                </OnPlatform>
-            </NavigationPage.Icon>
-            <x:Arguments>
-                <views:WebView />
             </x:Arguments>
         </NavigationPage>
 

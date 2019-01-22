@@ -57,13 +57,12 @@ namespace TTMobileClient.UWP
 
                 Xamarin.Forms.Forms.Init(e);
 
-                Octane.Xamarin.Forms.VideoPlayer.UWP.FormsVideoPlayer.Init();
-
                 if (e.PreviousExecutionState == ApplicationExecutionState.Terminated)
                 {
                     //TODO: Load state from previously suspended application
                 }
 
+                //*** MW
                 Xamarin.FormsMaps.Init(BingMapsKey);
 
                 // Place the frame in the current Window

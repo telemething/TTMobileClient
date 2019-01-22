@@ -22,7 +22,6 @@ namespace TTMobileClient.Droid
             base.OnCreate(savedInstanceState);
             CrossCurrentActivity.Current.Activity = this;
             global::Xamarin.Forms.Forms.Init(this, savedInstanceState);
-            Octane.Xamarin.Forms.VideoPlayer.Android.FormsVideoPlayer.Init();
             Xamarin.FormsMaps.Init(this, savedInstanceState);
             //Microsoft.WindowsAzure.MobileServices.CurrentPlatform.Init();
 
