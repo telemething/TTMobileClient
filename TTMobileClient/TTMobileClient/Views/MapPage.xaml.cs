@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using FaaUasLib;
 using Flitesys.GeographicLib;
 // missing AzureIotLib
 //using AzureIotLib;
@@ -164,6 +165,27 @@ namespace TTMobileClient.Views
                 };
 
                 _map.OnMapClick += OnMapClick;
+
+                //****************
+
+
+
+                FaaUasLib.FaaUas faa = new FaaUas();
+                faa.getData();
+
+                _map.faaFascilityMap = faa.fascilityMap;
+
+                /*_map.ShapeCoordinates = new List<Position>();
+
+                _map.ShapeCoordinates.Add(new Position(47.0166766905289, -123.000014237528));
+                _map.ShapeCoordinates.Add(new Position(47.0166766925289, -122.983347564466));
+                _map.ShapeCoordinates.Add(new Position(47.0000100214669, -122.983347560466));
+                _map.ShapeCoordinates.Add(new Position(47.0000100194669, -123.000014234528));
+
+                _map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(37.79752, -122.40183), Distance.FromMiles(0.1)));*/
+
+                //****************
+
 
                 // Map style buttons
                 var mapStyleStreetButton = new Button { Text = "Street", BackgroundColor = Color.Gray};

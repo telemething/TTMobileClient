@@ -173,6 +173,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\FaaUasLib\FaaUasLib.csproj">
+      <Project>{fd06a0d9-05c5-4884-ad23-ae3595cf14a0}</Project>
+      <Name>FaaUasLib</Name>
+    </ProjectReference>
     <ProjectReference Include="..\TTMobileClient\TTMobileClient.csproj">
       <Project>{6ABE091B-8AC6-4EB9-8520-8ED51A5B9830}</Project>
       <Name>TTMobileClient</Name>

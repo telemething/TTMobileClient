@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\FaaUasLib\FaaUasLib.csproj" />
     <ProjectReference Include="..\..\RosClientLib\RosClientLib.csproj" />
   </ItemGroup>
 

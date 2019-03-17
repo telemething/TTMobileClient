@@ -77,6 +77,13 @@ namespace TTMobileClient
     {
         public event EventHandler<OnMapClickEventArgs> OnMapClick;
 
+        //*********************
+        public List<Position> ShapeCoordinates { get; set; }
+
+        public FaaUasLib.Models.FascilityMap faaFascilityMap { get; set; }
+
+        //*********************
+
         public ChangeHappened change;
         public List<Position> routeCoordinates;
         private List<Waypoint> _Waypoints;
