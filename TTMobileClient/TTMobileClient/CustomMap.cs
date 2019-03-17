@@ -119,7 +119,21 @@ namespace TTMobileClient
            Change = new ChangeHappened(waypoint, ChangeHappened.ChangeTypeEnum.Added);
        }
 
-       public void AddTrackedObject(TrackedObject trackedObject)
+       public void RemoveWaypoint(Waypoint waypoint)
+       {
+           Change = new ChangeHappened(waypoint, ChangeHappened.ChangeTypeEnum.Removed);
+           _Waypoints.Remove(waypoint);
+       }
+
+       public void RemoveWaypoints()
+       {
+           foreach (var wpt in _Waypoints)
+              Change = new ChangeHappened(wpt, ChangeHappened.ChangeTypeEnum.Removed);
+
+           _Waypoints.Clear();
+        }
+
+        public void AddTrackedObject(TrackedObject trackedObject)
        {
             _TrackedObjects.Add(trackedObject);
             Change = new ChangeHappened(trackedObject, ChangeHappened.ChangeTypeEnum.Added);

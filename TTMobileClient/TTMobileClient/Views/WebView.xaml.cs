@@ -21,7 +21,10 @@ namespace TTMobileClient.Views
         //*********************************************************************
         ///
         /// <summary>
-        /// 
+        /// ROS Web_Video_Server
+        /// http://wiki.ros.org/web_video_server
+        /// Xamarin Forms WebView :
+        /// https://docs.microsoft.com/en-us/xamarin/xamarin-forms/user-interface/webview?tabs=windows
         /// </summary>
         ///
         //*********************************************************************
@@ -62,7 +65,7 @@ namespace TTMobileClient.Views
 
         protected override void OnAppearing()
         {
-            bool envelope = true;
+            bool envelope = false;
 
             DisplayImageStream(envelope ?
                 "http://192.168.1.30:8080/stream?topic=/airsim/image_raw" :

@@ -4,12 +4,5 @@
              x:Class="TTMobileClient.Views.MapPage"
              xmlns:vm="clr-namespace:TTMobileClient.ViewModels">
     <ContentPage.Content>
-        <!--<StackLayout VerticalOptions="StartAndExpand" Padding="30">
-            <maps:Map WidthRequest="320" HeightRequest="200"
-                x:Name="MyMap"
-                IsShowingUser="true"
-                MapType="Hybrid"
-            />
-        </StackLayout>-->
     </ContentPage.Content>
 </ContentPage>

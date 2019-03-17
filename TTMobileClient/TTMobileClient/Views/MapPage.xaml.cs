@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,10 +35,21 @@ using Xamarin.Forms.Xaml;
 
 namespace TTMobileClient.Views
 {
+    public enum MissionStateEnum { Unknown, None, Sending, Sent, Starting, Underway, Failed, Completed }
+    public enum LandedStateEnum { Unknown, Grounded, Liftoff, Flying, Landing, Failed }
+    public enum ConnectionStateEnum { Unknown, NotConnected, Connecting, Connected, Failed, Dropped }
+
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class MapPage : ContentPage
     {
-        //private Map _map;
+        string TestUri = "ws://192.168.1.30:9090";
+        double TestLat = 47.6062;
+        double TestLong = -122.3321;
+
+        #region private 
+
+        private IRosClient _rosClient = null;
+
         private CustomMap _map;
         private Plugin.Geolocator.Abstractions.Position _myPosition;
         private Timer _heartbeatTimer;
@@ -45,10 +57,50 @@ namespace TTMobileClient.Views
         // missing AzureIotLib
         //private AzureIotDevice _azureIotDevice;
 
-        private Label StatusLatLabel;
-        private Label StatusLongLabel;
-        private Label StatusAltLabel;
-        private Label StatusLandedLabel;
+        private MissionStateEnum _missionState = MissionStateEnum.Unknown;
+        private LandedStateEnum _landedState = LandedStateEnum.Unknown;
+        private ConnectionStateEnum _connectionState = ConnectionStateEnum.Unknown;
+
+        private MissionStateEnum MissionState
+        {
+            set
+            { _missionState = value; UpdateMessageBox(); }
+            get => _missionState;
+        }
+
+        private LandedStateEnum LandedState
+        {
+            set
+            { _landedState = value; UpdateMessageBox(); }
+            get => _landedState;
+        }
+
+        private ConnectionStateEnum ConnectionState
+        {
+            set
+            { _connectionState = value; UpdateMessageBox(); }
+            get => _connectionState;
+        }
+
+        private Label _MessageLabel = new Label();
+
+        private Label _StatusLatLabel;
+        private Label _StatusLongLabel;
+        private Label _StatusAltLabel;
+        private Label _StatusLandedLabel;
+
+        private StackLayout _configStack;
+        private StackLayout _missionStack;
+        private StackLayout _telemStack;
+
+        // Position tracking stuff
+        private double _lastLat = 0;
+        private double _lastLon = 0;
+        private readonly Geodesic _geo = Geodesic.WGS84;
+        private bool _moveMapToTrackedObject = true;
+        private TrackedObject _singleTrackedObject;
+
+        #endregion
 
         //*********************************************************************
         ///
@@ -103,6 +155,177 @@ namespace TTMobileClient.Views
                 // create map
                 _map = new CustomMap(
                     MapSpan.FromCenterAndRadius(
+                        new Position(TestLat, TestLong), Distance.FromMiles(0.3)))
+                {
+                    IsShowingUser = true,
+                    HeightRequest = 100,
+                    WidthRequest = 960,
+                    VerticalOptions = LayoutOptions.FillAndExpand,
+                };
+
+                _map.OnMapClick += OnMapClick;
+
+                // Map style buttons
+                var mapStyleStreetButton = new Button { Text = "Street", BackgroundColor = Color.Gray};
+                var mapStyleHybridButton = new Button { Text = "Hybrid", BackgroundColor = Color.Gray };
+                var mapStyleSatelliteButton = new Button { Text = "Satellite", BackgroundColor = Color.Gray };
+
+                mapStyleStreetButton.Clicked += HandleClicked;
+                mapStyleHybridButton.Clicked += HandleClicked;
+                mapStyleSatelliteButton.Clicked += HandleClicked;
+
+                // Mission buttons
+                var missionConnectButton = new Button { Text = "Connect", BackgroundColor = Color.Gray };
+                var missionSendMissionButon = new Button { Text = "Send Mission", BackgroundColor = Color.Gray };
+                var missionStartMissionButton = new Button { Text = "Start Mission", BackgroundColor = Color.Gray };
+                var missionEndMissionButton = new Button { Text = "End Mission", BackgroundColor = Color.Gray };
+                var missionClearMissionButton = new Button { Text = "Clear Mission", BackgroundColor = Color.Gray };
+
+                missionConnectButton.Clicked += HandleClicked;
+                missionSendMissionButon.Clicked += HandleClicked;
+                missionStartMissionButton.Clicked += HandleClicked;
+                missionEndMissionButton.Clicked += HandleClicked;
+                missionClearMissionButton.Clicked += HandleClicked;
+
+                // Coordinates Display
+                _StatusLatLabel = new Label { Text = "---", TextColor = Color.Red, FontSize = 20 };
+                _StatusLongLabel = new Label { Text = "---", TextColor = Color.Red, FontSize = 20 };
+                _StatusAltLabel = new Label { Text = "---", TextColor = Color.Red, FontSize = 20 };
+                _StatusLandedLabel = new Label { Text = "---", TextColor = Color.Red, FontSize = 20 };
+
+                // Popup stacks
+                _configStack = new StackLayout
+                {
+                    IsVisible = false,
+                    Spacing = 10,
+                    HorizontalOptions = LayoutOptions.CenterAndExpand,
+                    Orientation = StackOrientation.Horizontal,
+                    Children = { mapStyleStreetButton, mapStyleHybridButton,
+                        mapStyleSatelliteButton }
+                };
+
+                _missionStack = new StackLayout
+                {
+                    IsVisible = false,
+                    Spacing = 10,
+                    HorizontalOptions = LayoutOptions.CenterAndExpand,
+                    Orientation = StackOrientation.Horizontal,
+                    Children = { missionConnectButton, missionSendMissionButon,
+                        missionStartMissionButton, missionEndMissionButton,
+                        missionClearMissionButton }
+                };
+
+                // Telemetry Stack
+                _telemStack = new StackLayout
+                {
+                    Spacing = 10,
+                    //HorizontalOptions = LayoutOptions.CenterAndExpand,
+                    VerticalOptions = LayoutOptions.StartAndExpand,
+                    Orientation = StackOrientation.Vertical,
+                    Children = { _StatusLatLabel, _StatusLongLabel, _StatusAltLabel }
+                };
+
+                // Bottom Tray
+
+                _MessageLabel = new Label
+                {
+                    Text = "Hi",
+                    //TextColor = Color.Red,
+                    //FontSize = 30,
+                    HorizontalOptions = LayoutOptions.CenterAndExpand
+                };
+
+                ImageButton missionButton = new ImageButton
+                {
+                    Source = "uav.png",
+                    HorizontalOptions = LayoutOptions.Start,
+                    VerticalOptions = LayoutOptions.CenterAndExpand
+                };
+                ImageButton configButton = new ImageButton
+                {
+                    Source = "uav.png",
+                    HorizontalOptions = LayoutOptions.End,
+                    VerticalOptions = LayoutOptions.CenterAndExpand
+                };
+
+                missionButton.Clicked += (sender, args) => 
+                    { _configStack.IsVisible = false; _missionStack.IsVisible = true; };
+                configButton.Clicked += (sender, args) => 
+                    { _missionStack.IsVisible = false; _configStack.IsVisible = true; };
+
+                var bottomTray = new StackLayout
+                {
+                    Spacing = 10,
+                    HorizontalOptions = LayoutOptions.Fill,
+                    Orientation = StackOrientation.Horizontal,
+                    Children = { missionButton, _MessageLabel, configButton }
+                };
+
+                var stack = new StackLayout { Spacing = 0 };
+                stack.Children.Add(_map);
+                stack.Children.Add(_configStack);
+                stack.Children.Add(_missionStack);
+
+                stack.Children.Add(bottomTray);
+
+                var layout = new AbsoluteLayout();
+
+                layout.Children.Add(stack);
+                AbsoluteLayout.SetLayoutBounds(stack, 
+                    new Rectangle(0, 0, 1, 1));
+                AbsoluteLayout.SetLayoutFlags(stack, 
+                    AbsoluteLayoutFlags.All);
+
+                layout.Children.Add(_telemStack);
+                AbsoluteLayout.SetLayoutBounds(_telemStack, 
+                    new Rectangle(.01, .9, 250, 200));
+                AbsoluteLayout.SetLayoutFlags(_telemStack, 
+                    AbsoluteLayoutFlags.PositionProportional);
+
+                /*layout.Children.Add(_configStack);
+                AbsoluteLayout.SetLayoutBounds(_configStack, 
+                    new Rectangle(.5, .9, 200, 40));
+                AbsoluteLayout.SetLayoutFlags(_configStack, 
+                    AbsoluteLayoutFlags.PositionProportional);
+
+                layout.Children.Add(_missionStack);
+                AbsoluteLayout.SetLayoutBounds(_missionStack, 
+                    new Rectangle(.5, .9, 200, 40));
+                AbsoluteLayout.SetLayoutFlags(_missionStack, 
+                    AbsoluteLayoutFlags.PositionProportional);*/
+
+                Content = layout;
+
+                //ShowCurrentPositionOnMap();
+
+                //TestDropCustomPin();
+
+                //TestDrawPolyline();
+
+                UpdateMessageBox();
+
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                //logger.DebugLogError("Fatal Error on permissions: " + ex.Message);
+                await App.Current.MainPage.DisplayAlert(
+                    "Error", "Error: " + ex.Message, "Ok");
+                return false;
+            }
+        }
+
+        private async Task<bool> ShowMapy()
+        {
+            if (!await GetPermissions(new List<Permission>()
+                { Permission.Location, Permission.LocationWhenInUse }))
+                return false;
+
+            try
+            {
+                // create map
+                _map = new CustomMap(
+                    MapSpan.FromCenterAndRadius(
                         new Position(47.6062, -122.3321), Distance.FromMiles(0.3)))
                 {
                     IsShowingUser = true,
@@ -111,7 +334,7 @@ namespace TTMobileClient.Views
                     VerticalOptions = LayoutOptions.FillAndExpand,
                 };
 
-        _map.OnMapClick += OnMapClick;
+                _map.OnMapClick += OnMapClick;
 
                 //BuildCustomPins();
 
@@ -131,10 +354,10 @@ namespace TTMobileClient.Views
                 StartMission.Clicked += HandleClicked;
 
                 //var PositionLabel = new Label { Text = "This is a green label.", TextColor = Color.FromHex("#77d065"), FontSize = 20 };
-                StatusLatLabel = new Label { Text = "---" };
-                StatusLongLabel = new Label { Text = "---" };
-                StatusAltLabel = new Label { Text = "---" };
-                StatusLandedLabel = new Label { Text = "---" };
+                _StatusLatLabel = new Label { Text = "---" };
+                _StatusLongLabel = new Label { Text = "---" };
+                _StatusAltLabel = new Label { Text = "---" };
+                _StatusLandedLabel = new Label { Text = "---" };
 
                 var buttons = new StackLayout
                 {
@@ -149,7 +372,7 @@ namespace TTMobileClient.Views
                     Spacing = 10,
                     HorizontalOptions = LayoutOptions.CenterAndExpand,
                     Orientation = StackOrientation.Horizontal,
-                    Children = { StatusLandedLabel, StatusLatLabel, StatusLongLabel, StatusAltLabel }
+                    Children = { _StatusLandedLabel, _StatusLatLabel, _StatusLongLabel, _StatusAltLabel }
                 };
 
                 var stack = new StackLayout { Spacing = 0 };
@@ -158,11 +381,11 @@ namespace TTMobileClient.Views
                 stack.Children.Add(telem);
                 Content = stack;
 
-         //ShowCurrentPositionOnMap();
+                //ShowCurrentPositionOnMap();
 
-         //TestDropCustomPin();
+                //TestDropCustomPin();
 
-         //TestDrawPolyline();
+                //TestDrawPolyline();
 
                 return true;
             }
@@ -174,6 +397,23 @@ namespace TTMobileClient.Views
             }
         }
 
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        ///
+        //*********************************************************************
+
+        private void UpdateMessageBox()
+        {
+            Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
+                _MessageLabel.Text = 
+                    $"Connection: {this.ConnectionState.ToString()}, " +
+                    $"Mission: {this.MissionState.ToString()}, " +
+                    $"UAV: {this.LandedState.ToString()}");
+        }
+        
         //*********************************************************************
         ///
         /// <summary>
@@ -209,7 +449,7 @@ namespace TTMobileClient.Views
                 Label = "Waypoint",
                 Address = $"Lat: {lat}, Lon: {lon}, alt: {alt}",
                 Id = "Waypoint",
-                Url = "http://xamarin.com/about/"
+                Url = "http://www.telemething.com/"
             });
         }
 
@@ -257,6 +497,9 @@ namespace TTMobileClient.Views
 
         void HandleClicked(object sender, EventArgs e)
         {
+            _missionStack.IsVisible = false;
+            _configStack.IsVisible = false;
+
             var b = sender as Button;
             switch (b.Text)
             {
@@ -272,11 +515,17 @@ namespace TTMobileClient.Views
                 case "Connect":
                     Xamarin.Forms.Device.BeginInvokeOnMainThread(StartTelemetry);
                     break;
-                case "sendMission":
+                case "Send Mission":
                     Xamarin.Forms.Device.BeginInvokeOnMainThread(SendMission);
                     break;
-                case "StartMission":
+                case "Start Mission":
                     Xamarin.Forms.Device.BeginInvokeOnMainThread(StartMission);
+                    break;
+                case "End Mission":
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(EndMission);
+                    break;
+                case "Clear Mission":
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(ClearMission);
                     break;
             }
         }
@@ -307,50 +556,6 @@ namespace TTMobileClient.Views
 
             _map.MoveToRegion(MapSpan.FromCenterAndRadius(
                 new Position(pos.Latitude, pos.Longitude), Distance.FromMiles(0.3)));
-        }
-
-        //*********************************************************************
-        ///
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        ///
-        //*********************************************************************
-
-        private async Task<bool> ShowMapOld()
-        {
-            if (!await GetPermissions(new List<Permission>()
-                { Permission.Location, Permission.LocationWhenInUse,
-                    Permission.LocationAlways }))
-                return false;
-
-            try
-            {
-                var map = new Map(
-                    MapSpan.FromCenterAndRadius(
-                        new Position(37, -122), 
-                        Distance.FromMiles(0.3)))
-                {
-                    IsShowingUser = true,
-                    HeightRequest = 100,
-                    WidthRequest = 960,
-                    VerticalOptions = LayoutOptions.FillAndExpand
-                };
-
-                var stack = new StackLayout { Spacing = 0 };
-                stack.Children.Add(map);
-                Content = stack;
-
-                return true;
-            }
-            catch (System.Exception ex)
-            {
-                //logger.DebugLogError("Fatal Error on permissions: " + ex.Message);
-                await App.Current.MainPage.DisplayAlert(
-                    "Error", "Error: " + ex.Message, "Ok");
-                return false;
-            }
         }
 
         //*********************************************************************
@@ -476,9 +681,6 @@ namespace TTMobileClient.Views
         ///
         //*********************************************************************
 
-        string TestUri = "ws://192.168.1.30:9090";
-        private IRosClient _rosClient = null;
-
         private async void ConnectToMav()
         {
             if( null == _rosClient)
@@ -507,6 +709,8 @@ namespace TTMobileClient.Views
             if (e is ConnectionEventArgs tt)
                 message = tt.message;
 
+            this.ConnectionState = ConnectionStateEnum.Failed;
+
             Xamarin.Forms.Device.BeginInvokeOnMainThread(
                 () => App.Current.MainPage.DisplayAlert(
                     "Error", "Error: " + message, "Ok"));
@@ -524,7 +728,7 @@ namespace TTMobileClient.Views
 
         private void OnConnected(object sender, EventArgs e)
         {
-            var tt = e as ConnectionEventArgs;
+            this.ConnectionState = ConnectionStateEnum.Connected;
         }
 
         //*********************************************************************
@@ -537,6 +741,8 @@ namespace TTMobileClient.Views
 
         private async void SendMission()
         {
+            this.MissionState = MissionStateEnum.Sending;
+
             var waypoints = new Waypoints();
 
             waypoints.StartNewMission();
@@ -561,10 +767,18 @@ namespace TTMobileClient.Views
             ConnectToMav();
             _rosClient.CallService<Waypoints.WaypointReqResp>(waypoints,
                 resp => {
-                    if (!resp.success)
+                    if (resp.success)
+                    {
+                        this.MissionState = MissionStateEnum.Sent;
+                    }
+                    else
+                    {
+                        this.MissionState = MissionStateEnum.Failed;
+
                         Xamarin.Forms.Device.BeginInvokeOnMainThread(
                             () => App.Current.MainPage.DisplayAlert(
                                 "Error", "Unable to send waypoints", "Ok"));
+                    }
                 });
         }
 
@@ -578,14 +792,59 @@ namespace TTMobileClient.Views
 
         private async void StartMission()
         {
+            this.MissionState = MissionStateEnum.Starting;
+
             ConnectToMav();
-            _rosClient.CallService<StartMission.StartMissionReqResp>(new StartMission(), 
+            _rosClient.CallService<StartMission.StartMissionReqResp>(new StartMission(),
                 resp => {
-                    if (!resp.success)
+                    if (resp.success)
+                    {
+                        this.MissionState = MissionStateEnum.Starting;
+                    }
+                    else
+                    {
+                        this.MissionState = MissionStateEnum.Failed;
+
                         Xamarin.Forms.Device.BeginInvokeOnMainThread(
                             () => App.Current.MainPage.DisplayAlert(
                                 "Error", "Unable to start mission", "Ok"));
+                    }
                 });
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        ///
+        //*********************************************************************
+
+        private async void EndMission()
+        {
+            //this.MissionState = MissionStateEnum.Underway;
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        ///
+        //*********************************************************************
+
+        private async void ClearMission()
+        {
+            // we cant clear a mission which is underway
+            if (this.MissionState == MissionStateEnum.Starting | 
+                this.MissionState == MissionStateEnum.Underway)
+                return;
+
+            //remove all the waypoints
+
+            _map.RemoveWaypoints();
+
+            this.MissionState = MissionStateEnum.None;
         }
 
         //*********************************************************************
@@ -598,6 +857,9 @@ namespace TTMobileClient.Views
 
         private async void StartTelemetry()
         {
+            if(this.ConnectionState != ConnectionStateEnum.Connected)
+                this.ConnectionState = ConnectionStateEnum.Connecting;
+
             _moveMapToTrackedObject = true;
 
             ConnectToMav();
@@ -608,6 +870,45 @@ namespace TTMobileClient.Views
                     TelemetrySubscriptionHandler);
 
             //rosClient.Unsubscribe(subscriptionId);
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="lsIn"></param>
+        ///
+        //*********************************************************************
+
+        private void SetLandedState(string lsIn)
+        {
+            if (0 == lsIn.Length)
+                return;
+
+            switch (lsIn)
+            {
+                case "LANDED_STATE_ON_GROUND":
+                    LandedState = LandedStateEnum.Grounded;
+                    if (MissionState == MissionStateEnum.Underway)
+                        MissionState = MissionStateEnum.Completed;
+                    break;
+                case "LANDED_STATE_IN_AIR":
+                    LandedState = LandedStateEnum.Flying;
+                    MissionState = MissionStateEnum.Underway;
+                    break;
+                case "LANDED_STATE_LANDING":
+                    LandedState = LandedStateEnum.Landing;
+                    MissionState = MissionStateEnum.Underway;
+                    break;
+                case "LANDED_STATE_TAKEOFF":
+                    LandedState = LandedStateEnum.Liftoff;
+                    MissionState = MissionStateEnum.Underway;
+                    break;
+                default:
+                    LandedState = LandedStateEnum.Unknown;
+                    break;
+            }
         }
 
         //*********************************************************************
@@ -628,10 +929,11 @@ namespace TTMobileClient.Views
             Xamarin.Forms.Device.BeginInvokeOnMainThread(
                 () =>
                 {
-                    StatusLatLabel.Text = $"Lat: {missionStatus.x_lat}";
-                    StatusLongLabel.Text = $"Lon: {missionStatus.y_long}";
-                    StatusAltLabel.Text = $"Alt: {Math.Round(missionStatus.z_alt, 2)}";
-                    StatusLandedLabel.Text = $"State: {missionStatus.landed_state}";
+                    _StatusLatLabel.Text = $"Lat: {missionStatus.x_lat}";
+                    _StatusLongLabel.Text = $"Lon: {missionStatus.y_long}";
+                    _StatusAltLabel.Text = $"Alt: {Math.Round(missionStatus.z_alt, 2)}";
+
+                    SetLandedState(missionStatus.landed_state);
 
                     ShowTrackedObjectLocation(
                         missionStatus.x_lat, missionStatus.y_long, 2); 
@@ -663,75 +965,6 @@ namespace TTMobileClient.Views
         /// </summary>
         /// <param name="lat"></param>
         /// <param name="lon"></param>
-        ///
-        //*********************************************************************
-
-        private double lastLat = 0;
-        private double lastLon = 0;
-        private readonly Geodesic _geo = Geodesic.WGS84;
-        private bool _moveMapToTrackedObject = true;
-
-
-        //*** single tracked pin test ***
-
-        private TrackedObject singleTrackedObject;
-
-        //*******************************
-
-        /*private TrackedObject pin;
-
-        private void ShowTrackedObjectLocation_old(double lat, double lon, double minDelta)
-        {
-            try
-            {
-                if (minDelta > _geo.Inverse(lastLat, lastLon, lat, lon).Distance)
-                    return;
-
-                lastLat = lat;
-                lastLon = lon;
-
-                var position = new Position(lat, lon); // Latitude, Longitude
-
-                if (null == singleTrackedObject)
-                {
-                    var pin = new Pin
-                    {
-                        Type = PinType.Place,
-                        Position = position,
-                        Label = "Dr. Elkman",
-                        Address = $"Time:{DateTime.UtcNow.ToString()}"
-                    };
-
-                    singleTrackedObject = pin;
-                    _map.Pins.Add(pin);
-                }
-                else
-                {
-                    singleTrackedObject.Position = position;
-                }
-
-                if (_moveMapToTrackedObject)
-                {
-                    _map.MoveToRegion(
-                        MapSpan.FromCenterAndRadius(
-                            position, Distance.FromMiles(1)));
-
-                    _moveMapToTrackedObject = false;
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-        }*/
-
-        //*********************************************************************
-        ///
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="lat"></param>
-        /// <param name="lon"></param>
         /// <param name="minDelta"></param>
         ///
         //*********************************************************************
@@ -741,21 +974,21 @@ namespace TTMobileClient.Views
             try
             {
                 if (minDelta > _geo.Inverse(
-                        lastLat, lastLon, lat, lon).Distance)
+                        _lastLat, _lastLon, lat, lon).Distance)
                     return;
 
-                lastLat = lat;
-                lastLon = lon;
+                _lastLat = lat;
+                _lastLon = lon;
 
                 var position = new Position(lat, lon); // Latitude, Longitude
 
-                if (null == singleTrackedObject)
-                    singleTrackedObject = AddTrackedObject(
+                if (null == _singleTrackedObject)
+                    _singleTrackedObject = AddTrackedObject(
                         "singleTrackedObject", lat, lon, 0);
                 else
                 {
-                    singleTrackedObject.Position = position;
-                    _map.Change = new ChangeHappened(singleTrackedObject, 
+                    _singleTrackedObject.Position = position;
+                    _map.Change = new ChangeHappened(_singleTrackedObject, 
                         ChangeHappened.ChangeTypeEnum.Changed);
                 }
 
@@ -801,6 +1034,8 @@ namespace TTMobileClient.Views
 
             Xamarin.Forms.Device.BeginInvokeOnMainThread(() => { ShowTrackedObjectLocation(lat, lon); });*/
         }
+
+        #region Tests
 
         //*********************************************************************
         ///
@@ -875,5 +1110,7 @@ namespace TTMobileClient.Views
                 () => _map.MoveToRegion(MapSpan.FromCenterAndRadius(
                 new Position(37.79752, -122.40183), Distance.FromMiles(1.0))));
         }
+
+        #endregion
     }
 }

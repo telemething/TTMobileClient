@@ -19,7 +19,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RosClientLib", "RosClientLi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RosBridgeClientLibStd", "..\ros-sharp-UWP\Libraries\RosBridgeClientLibStd\RosBridgeClientLibStd.csproj", "{E6226861-32A8-46E4-97F1-B9D80AD4E13C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureIotLib", "AzureIotLib\AzureIotLib.csproj", "{3D365B36-1FC8-403C-9A7D-0B999A578737}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureIotLib", "AzureIotLib\AzureIotLib.csproj", "{3D365B36-1FC8-403C-9A7D-0B999A578737}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
