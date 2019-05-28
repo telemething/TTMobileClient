@@ -391,7 +391,8 @@ namespace RosClientLib
 
         public void TestTopicPublish()
         {
-            std_msgs.String message = new std_msgs.String("publication test message data");
+            std_msgs.String message = new std_msgs.String();
+            message.data = "publication test message data";
             string publicationId = _rosSocket.Advertise<std_msgs.String>("publication_test");
             _rosSocket.Publish(publicationId, message);
 
@@ -483,7 +484,8 @@ namespace RosClientLib
             RosSocket rosSocket = new RosSocket(new RosSharp.RosBridgeClient.Protocols.WebSocketNetProtocol(webSocketUri));
 
             // Publication:
-            std_msgs.String message = new std_msgs.String("publication test message data");
+            std_msgs.String message = new std_msgs.String();
+            message.data = "publication test message data";
 
             string publicationId = rosSocket.Advertise<std_msgs.String>("publication_test");
             rosSocket.Publish(publicationId, message);
@@ -518,7 +520,8 @@ namespace RosClientLib
             RosSocket rosSocket = new RosSocket(new RosSharp.RosBridgeClient.Protocols.WebSocketNetProtocol(webSocketUri));
 
             // Publication:
-            std_msgs.String message = new std_msgs.String("publication test message data");
+            std_msgs.String message = new std_msgs.String();
+            message.data = "publication test message data";
 
             string publicationId = rosSocket.Advertise<std_msgs.String>("publication_test");
             rosSocket.Publish(publicationId, message);
