@@ -55,6 +55,7 @@ namespace TTMobileClient.Views
         private Plugin.Geolocator.Abstractions.Position _myPosition;
         private Timer _heartbeatTimer;
         private MissionStatus _missionStatus;
+        private MissionCtrl _missionCtrl;
         // missing AzureIotLib
         //private AzureIotDevice _azureIotDevice;
 
@@ -91,6 +92,7 @@ namespace TTMobileClient.Views
         private Label _StatusLandedLabel;
 
         private StackLayout _configStack;
+        private StackLayout _planStack;
         private StackLayout _missionStack;
         private StackLayout _telemStack;
 
@@ -113,6 +115,7 @@ namespace TTMobileClient.Views
 
         public MapPage()
         {
+            _missionCtrl = new MissionCtrl();
             InitializeComponent();
         }
 
@@ -226,6 +229,15 @@ namespace TTMobileClient.Views
                         mapStyleSatelliteButton }
                 };
 
+                _planStack = new StackLayout
+                {
+                    IsVisible = false,
+                    Spacing = 10,
+                    HorizontalOptions = LayoutOptions.CenterAndExpand,
+                    Orientation = StackOrientation.Horizontal,
+                    Children = { _missionCtrl.viewCtrl }
+                };
+
                 _missionStack = new StackLayout
                 {
                     IsVisible = false,
@@ -259,32 +271,44 @@ namespace TTMobileClient.Views
 
                 ImageButton missionButton = new ImageButton
                 {
-                    Source = "uav.png",
+                    Source = "mission.png",
                     HorizontalOptions = LayoutOptions.Start,
                     VerticalOptions = LayoutOptions.CenterAndExpand
                 };
+                ImageButton planButton = new ImageButton
+                {
+                    Source = "plan.png",
+                    HorizontalOptions = LayoutOptions.Start,
+                    VerticalOptions = LayoutOptions.Center,
+                };
                 ImageButton configButton = new ImageButton
                 {
-                    Source = "uav.png",
+                    Source = "view.png",
                     HorizontalOptions = LayoutOptions.End,
                     VerticalOptions = LayoutOptions.CenterAndExpand
                 };
 
-                missionButton.Clicked += (sender, args) => 
-                    { _configStack.IsVisible = false; _missionStack.IsVisible = true; };
+                missionButton.Clicked += (sender, args) =>
+                { _configStack.IsVisible = false; _missionStack.IsVisible = !_missionStack.IsVisible; };
+                planButton.Clicked += (sender, args) =>
+                { /*_configStack.IsVisible = false; _missionStack.IsVisible = false;*/ _planStack.IsVisible = !_planStack.IsVisible; };
                 configButton.Clicked += (sender, args) => 
-                    { _missionStack.IsVisible = false; _configStack.IsVisible = true; };
+                { _missionStack.IsVisible = false; _configStack.IsVisible = !_configStack.IsVisible; };
 
                 var bottomTray = new StackLayout
                 {
                     Spacing = 10,
                     HorizontalOptions = LayoutOptions.Fill,
                     Orientation = StackOrientation.Horizontal,
-                    Children = { missionButton, _MessageLabel, configButton }
+                    Children = { missionButton, planButton, _MessageLabel, configButton }
                 };
 
+                var MapPlanstack = new StackLayout { Spacing = 0, Orientation = StackOrientation.Horizontal, VerticalOptions = LayoutOptions.FillAndExpand };
+                MapPlanstack.Children.Add(_map);
+                MapPlanstack.Children.Add(_planStack);
+
                 var stack = new StackLayout { Spacing = 0 };
-                stack.Children.Add(_map);
+                stack.Children.Add(MapPlanstack);
                 stack.Children.Add(_configStack);
                 stack.Children.Add(_missionStack);
 

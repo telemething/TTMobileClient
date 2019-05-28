@@ -275,13 +275,7 @@ namespace TTMobileClient.UWP
                 }
 
                 //*************************************
-
-                //var coordinates2 = new List<BasicGeoposition>();
-
-                //foreach (var position in formsMap.ShapeCoordinates)
-                //{
-                //    coordinates2.Add(new BasicGeoposition() { Latitude = position.Latitude, Longitude = position.Longitude });
-                //}
+                //*************************************
 
                 if(null != formsMap.faaFascilityMap)
                 foreach (var feature in formsMap.faaFascilityMap.features)
@@ -296,24 +290,17 @@ namespace TTMobileClient.UWP
                         }
 
                         var ringPolygon = new MapPolygon();
-                        ringPolygon.FillColor = Windows.UI.Colors.LightGray;
-                        //ringPolygon.FillColor = Windows.UI.Color.FromArgb(128, 255, 0, 0);
-                        ringPolygon.StrokeColor = Windows.UI.Colors.LightPink;
-                        //ringPolygon.StrokeColor = Windows.UI.Color.FromArgb(128, 0, 0, 255);
+                        //ringPolygon.FillColor = Windows.UI.Colors.LightGray;
+                        ringPolygon.FillColor = Windows.UI.Color.FromArgb(100, 80, 80, 80);
+                        //ringPolygon.StrokeColor = Windows.UI.Colors.LightPink;
+                        ringPolygon.StrokeColor = Windows.UI.Color.FromArgb(100, 255, 192, 203);
                         ringPolygon.StrokeThickness = 1;
                         ringPolygon.Path = new Geopath(ringCoords);
                         nativeMap.MapElements.Add(ringPolygon);
                     }
                 }
 
-
-                //var polygon = new MapPolygon();
-                //polygon.FillColor = Windows.UI.Color.FromArgb(128, 255, 0, 0);
-                //polygon.StrokeColor = Windows.UI.Color.FromArgb(128, 0, 0, 255);
-                //polygon.StrokeThickness = 1;
-                //polygon.Path = new Geopath(coordinates2);
-                //nativeMap.MapElements.Add(polygon);
-
+                //*************************************
                 //*************************************
             }
         }

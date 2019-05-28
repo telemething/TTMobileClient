@@ -48,7 +48,7 @@
             </x:Arguments>
         </NavigationPage>
 
-        <NavigationPage Title="WebView Test">
+        <NavigationPage Title="Video">
             <NavigationPage.Icon>
                 <OnPlatform x:TypeArguments="FileImageSource">
                     <On Platform="iOS" Value="tab_about.png"/>
