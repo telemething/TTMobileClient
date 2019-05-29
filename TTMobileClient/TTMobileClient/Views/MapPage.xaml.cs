@@ -172,11 +172,12 @@ namespace TTMobileClient.Views
                 //****************
 
 
+                // below implemented on uwp, not iOS or Android
+                //FaaUasLib.FaaUas faa = new FaaUas();
+                //faa.getData();
 
-                FaaUasLib.FaaUas faa = new FaaUas();
-                faa.getData();
-
-                _map.faaFascilityMap = faa.fascilityMap;
+                //_map.faaFascilityMap = faa.fascilityMap;
+                // above
 
                 /*_map.ShapeCoordinates = new List<Position>();
 

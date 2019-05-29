@@ -22,8 +22,8 @@ namespace FaaUasLib
 
         public void getData()
         {
-            //readFile("Y:\\Data\\Telemething\\LAANC\\faa_uas_fascilitymap_data_v2_latlon.json");
-            readFile("Data\\faa_uas_fascilitymap_data_v2_latlon.json");
+            //readFile("Y:\\Data\\Telemething\\LAANC\\faa_uas_fascilitymap_data_v2_latlon.json");  //old
+            readFile("Data\\faa_uas_fascilitymap_data_v2_latlon.json");                           // implemented on uwp, not iOS or Android
             fascilityMap_ = JsonConvert.DeserializeObject<FaaUasLib.Models.FascilityMap>(fileContents);
         }
     }
