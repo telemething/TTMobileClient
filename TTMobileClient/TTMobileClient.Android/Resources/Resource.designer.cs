@@ -6349,6 +6349,9 @@ namespace TTMobileClient.Droid
 			// aapt resource value: 0x7f090036
 			public const int abc_toolbar_collapse_description = 2131296310;
 			
+			// aapt resource value: 0x7f09004d
+			public const int app_name = 2131296333;
+			
 			// aapt resource value: 0x7f090044
 			public const int appbar_scrolling_view_behavior = 2131296324;
 			
