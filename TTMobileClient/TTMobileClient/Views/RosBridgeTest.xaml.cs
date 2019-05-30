@@ -29,14 +29,20 @@ namespace TTMobileClient.Views
             InitializeComponent();
         }
 
-        async void OnCallRosService(object sender, EventArgs args)
+        async void OnCallFetchTopics(object sender, EventArgs args)
         {
             FetchTopicList();
 
             //RosClientLib.RosClient.WaypointTest();
             //await label.RelRotateTo(360, 1000);
+        }
 
-            
+        async void OnCallSubscribePointCloud(object sender, EventArgs args)
+        {
+            SubscribeToPointCloud();
+
+            //RosClientLib.RosClient.WaypointTest();
+            //await label.RelRotateTo(360, 1000);
         }
 
         //*********************************************************************
@@ -138,6 +144,7 @@ namespace TTMobileClient.Views
                 resp => {
                     if (resp.success)
                     {
+                        resp.rosTopics.Sort((x,y) => string.Compare(x.topic, y.topic));
                         //this.MissionState = MissionStateEnum.Starting;
                         Xamarin.Forms.Device.BeginInvokeOnMainThread(() => ItemsListView.ItemsSource = resp.rosTopics);
                     }
@@ -159,5 +166,65 @@ namespace TTMobileClient.Views
 
             ////rosClient.Unsubscribe(subscriptionId);
         }
+
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        ///
+        //*********************************************************************
+
+        private async void SubscribeToPointCloud()
+        {
+            ConnectToMav();
+
+            var subscriptionId = _rosClient.Subscribe
+                <RosSharp.RosBridgeClient.Messages.Sensor.PointCloud2>(
+                    "/rtabmap/octomap_occupied_space",
+                    PointCloudSubscriptionHandler);
+
+            //rosClient.Unsubscribe(subscriptionId);
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="missionStatus"></param>
+        /// 
+        //*********************************************************************
+        private int pointCloudMessageCount = 1;
+        private long pointCloudAccumulatedSize = 0;
+
+        private void PointCloudSubscriptionHandler(RosSharp.RosBridgeClient.Messages.Sensor.PointCloud2 pc)
+        {
+            pointCloudAccumulatedSize += pc.data.Length;
+
+            System.Diagnostics.Debug.WriteLine(
+                "--------- PointCloud Data {0}, size: {1}, total: {2} ---------", 
+                pointCloudMessageCount++, pc.data.Length, pointCloudAccumulatedSize);
+
+            // do something to prevent high frequency updating
+
+            /*_missionStatus = missionStatus;
+
+            Xamarin.Forms.Device.BeginInvokeOnMainThread(
+                () =>
+                {
+                    _StatusLatLabel.Text = $"Lat: {missionStatus.x_lat}";
+                    _StatusLongLabel.Text = $"Lon: {missionStatus.y_long}";
+                    _StatusAltLabel.Text = $"Alt: {Math.Round(missionStatus.z_alt, 2)}";
+
+                    SetLandedState(missionStatus.landed_state);
+
+                    ShowTrackedObjectLocation(
+                        missionStatus.x_lat, missionStatus.y_long, 2);
+                });*/
+        }
+
+
     }
 }

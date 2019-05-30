@@ -134,13 +134,14 @@ namespace RosClientLib
             try
             {
                 _webSocketUri = uri;
-                _webSocketProtocol = 
+                _webSocketProtocol =
                     new RosSharp.RosBridgeClient.Protocols.WebSocketNetProtocol(uri);
-                _rosSocket = new RosSocket(_webSocketProtocol, 
+                _rosSocket = new RosSocket(_webSocketProtocol,
                     (sender, args) => onConnected?.Invoke(
                         sender, new ConnectionEventArgs(args as RbConnectionEventArgs)), 
                     (sender, args) => onConnectionFailed?.Invoke(
-                        sender, new ConnectionEventArgs(args as RbConnectionEventArgs)));
+                        sender, new ConnectionEventArgs(args as RbConnectionEventArgs)), 
+                        RosSocket.SerializerEnum.JSON);
             }
             catch (Exception e)
             {

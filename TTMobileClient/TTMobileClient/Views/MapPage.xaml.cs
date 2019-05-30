@@ -911,29 +911,12 @@ namespace TTMobileClient.Views
 
             ConnectToMav();
 
-            _rosClient.CallService<TopicList.TopicListReqResp>(new TopicList(),
-                resp => {
-                    if (resp.success)
-                    {
-                        this.MissionState = MissionStateEnum.Starting;
-                    }
-                    else
-                    {
-                        this.MissionState = MissionStateEnum.Failed;
+            var subscriptionId = _rosClient.Subscribe
+                <RosSharp.RosBridgeClient.Messages.Test.MissionStatus>(
+                    "/tt_mavros_wp_mission/MissionStatus",
+                    TelemetrySubscriptionHandler);
 
-                        //Xamarin.Forms.Device.BeginInvokeOnMainThread(
-                        //    () => App.Current.MainPage.DisplayAlert(
-                        //        "Error", "Unable to start mission", "Ok"));
-                    }
-                });
-
-
-            //var subscriptionId = _rosClient.Subscribe
-            //    <RosSharp.RosBridgeClient.Messages.Test.MissionStatus>(
-            //        "/tt_mavros_wp_mission/MissionStatus",
-            //        TelemetrySubscriptionHandler);
-
-            ////rosClient.Unsubscribe(subscriptionId);
+            //rosClient.Unsubscribe(subscriptionId);
         }
 
         //*********************************************************************
