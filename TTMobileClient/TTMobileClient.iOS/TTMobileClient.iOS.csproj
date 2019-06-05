@@ -33,6 +33,7 @@
     <CodesignEntitlements />
     <CodesignKey>iPhone Developer: Mark West (6E78ZRXHRT)</CodesignKey>
     <CodesignProvision>VS: WildCard Development</CodesignProvision>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
     <DebugType>none</DebugType>
@@ -143,6 +144,7 @@
     <InterfaceDefinition Include="Resources\LaunchScreen.storyboard" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="OpenTK-1.0" />
     <Reference Include="System" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
@@ -187,4 +189,5 @@
   <ItemGroup>
     <BundleResource Include="Resources\uav.png" />
   </ItemGroup>
+  <Import Project="..\..\OpenGLDemo\OpenGLDemo.projitems" Label="Shared" />
 </Project>

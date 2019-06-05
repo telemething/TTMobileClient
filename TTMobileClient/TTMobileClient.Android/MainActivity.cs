@@ -28,7 +28,10 @@ namespace TTMobileClient.Droid
             // https://github.com/jamesmontemagno/PermissionsPlugin
             Plugin.CurrentActivity.CrossCurrentActivity.Current.Init(this, savedInstanceState);
 
-            LoadApplication(new App());
+            //LoadApplication(new App());
+            LoadApplication(new TTMobileClient.OpenGLDemoApp());
+
+            
         }
 
         //*********************************************************************

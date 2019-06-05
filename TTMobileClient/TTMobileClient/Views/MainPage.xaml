@@ -26,6 +26,17 @@
             </x:Arguments>
         </NavigationPage>-->
 
+        <NavigationPage Title="OpenGlTest">
+            <NavigationPage.Icon>
+                <OnPlatform x:TypeArguments="FileImageSource">
+                    <On Platform="iOS" Value="tab_about.png"/>
+                </OnPlatform>
+            </NavigationPage.Icon>
+            <x:Arguments>
+                <views:OpenGlTest />
+            </x:Arguments>
+        </NavigationPage>
+
         <NavigationPage Title="Map">
             <NavigationPage.Icon>
                 <OnPlatform x:TypeArguments="FileImageSource">
@@ -34,6 +45,17 @@
             </NavigationPage.Icon>
             <x:Arguments>
                 <views:MapPage />
+            </x:Arguments>
+        </NavigationPage>
+
+        <NavigationPage Title="UrhoTest">
+            <NavigationPage.Icon>
+                <OnPlatform x:TypeArguments="FileImageSource">
+                    <On Platform="iOS" Value="tab_about.png"/>
+                </OnPlatform>
+            </NavigationPage.Icon>
+            <x:Arguments>
+                <views:UrhoTest />
             </x:Arguments>
         </NavigationPage>
 
@@ -57,7 +79,7 @@
             <x:Arguments>
                 <views:RosBridgeTest />
             </x:Arguments>
-        </NavigationPage> 
+        </NavigationPage>
 
-    </TabbedPage.Children>
+</TabbedPage.Children>
 </TabbedPage>

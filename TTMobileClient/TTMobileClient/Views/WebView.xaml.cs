@@ -46,13 +46,13 @@ namespace TTMobileClient.Views
 
         public void DisplayImageStream(string imageUrl, bool envelope)
         {
-            _imageUrl = imageUrl;
+            /*_imageUrl = imageUrl;
 
             if(envelope)
                 ImageContainer.Source = new HtmlWebViewSource
                     { Html = string.Format(_enveleopeString, _imageUrl) };
             else
-                ImageContainer.Source = imageUrl;
+                ImageContainer.Source = imageUrl;*/
         }
 
         //*********************************************************************

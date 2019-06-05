@@ -4,7 +4,8 @@
              x:Class="TTMobileClient.Views.WebView">
     <ContentPage.Content>
         <StackLayout>
-            <WebView x:Name="ImageContainer" HeightRequest="1000" WidthRequest="1000" />
+            <!--<WebView x:Name="ImageContainer" HeightRequest="1000" WidthRequest="1000" />-->
+            <WebView x:Name="WebContainer" HeightRequest="1000" WidthRequest="1000" Source="https://get.webgl.org/" />
         </StackLayout>
     </ContentPage.Content>
 </ContentPage>

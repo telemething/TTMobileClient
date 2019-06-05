@@ -23,7 +23,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FaaUasLib", "FaaUasLib\FaaU
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RosBridgeClientLibStd", "..\ros-sharp\Libraries\RosBridgeClientLibStd\RosBridgeClientLibStd.csproj", "{5622A710-DA3B-4720-9B75-2A6751F263D0}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "OpenGLDemo", "OpenGLDemo\OpenGLDemo.shproj", "{B7DD8B60-20D3-4C2B-AFB6-3446B564B37C}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		OpenGLDemo\OpenGLDemo.projitems*{1154c0d4-b494-4f9f-8994-3795742aff3c}*SharedItemsImports = 4
+		OpenGLDemo\OpenGLDemo.projitems*{b7dd8b60-20d3-4c2b-afb6-3446b564b37c}*SharedItemsImports = 13
+		OpenGLDemo\OpenGLDemo.projitems*{ba465d8c-5237-4916-b7cc-a589d90ea8a6}*SharedItemsImports = 4
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|ARM = Debug|ARM

@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" android:versionCode="1" android:versionName="1.0" package="com.telemething.TTMobileClient" android:installLocation="auto">
-	<uses-sdk android:minSdkVersion="21" android:targetSdkVersion="27" />
+	<uses-sdk android:minSdkVersion="23" android:targetSdkVersion="27" />
 	<application android:label="TTMobileClient.Android">
-    <meta-data android:name="com.google.android.maps.v2.API_KEY" android:value="AIzaSyAFQLMmDhN2H_D1BpJhiQX2u_PHmBn5zhc" />
-  </application>
+		<meta-data android:name="com.google.android.maps.v2.API_KEY" android:value="AIzaSyAFQLMmDhN2H_D1BpJhiQX2u_PHmBn5zhc" />
+	</application>
 	<uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
