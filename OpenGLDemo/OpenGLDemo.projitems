@@ -9,8 +9,11 @@
     <Import_RootNamespace>OpenGLDemo</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)KinectSettings.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)OpenGLDemo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)OpenGLCube.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)OpenGLWindow.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)Shaders\" />

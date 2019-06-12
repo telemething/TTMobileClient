@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Newtonsoft.Json.Converters;
 using RosClientLib;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
@@ -188,12 +190,97 @@ namespace TTMobileClient.Views
             //rosClient.Unsubscribe(subscriptionId);
         }
 
+        [StructLayout(LayoutKind.Explicit)]
+        public struct pcPoint
+        {
+            [FieldOffset(0)]
+            unsafe public fixed byte data[32];
+
+            [FieldOffset(0)]
+            public float x;
+
+            [FieldOffset(4)]
+            public float y;
+
+            [FieldOffset(8)]
+            public float z;
+
+            [FieldOffset(16)]
+            public Byte r;
+
+            [FieldOffset(17)]
+            public Byte g;
+
+            [FieldOffset(18)]
+            public Byte b;
+
+            [FieldOffset(19)]
+            public Byte a;
+        }
+
+        List<pcPoint> pcPoints = new List<pcPoint>(100);
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// For inspecting the PC data stream, not for production
+        /// </summary>
+        /// <param name="pc"></param>
+        /// 
+        //*********************************************************************
+
+        private void DesrializePointCloud(RosSharp.RosBridgeClient.Messages.Sensor.PointCloud2 pc)
+        {
+            int index = 0;
+            int length = 32;
+
+            for (var outer = 0; outer < 20; outer++)
+            {
+                var pt = new pcPoint();
+
+                unsafe
+                {
+                    for (int index2 = 0; index2 < length; index2++)
+                        pt.data[index2] = pc.data[index + index2];
+                }
+
+                index += length;
+
+                pcPoints.Add(pt);
+            }
+        }
+
+        private void PackPointCloud(RosSharp.RosBridgeClient.Messages.Sensor.PointCloud2 pc)
+        {
+            int outBite = 0;
+            int block1Length = 12;
+            int block2Offset = 16;
+            int block2Length = 4;
+
+            for (int inBite = 0; inBite < pc.data.Length; inBite += (int)pc.point_step)
+            {
+                Buffer.BlockCopy(pc.data, inBite, pc.data, outBite, block1Length);
+                Buffer.BlockCopy(pc.data, inBite + block2Offset, pc.data, outBite + block1Length, block2Length);
+                outBite += block1Length + block2Length;
+            }
+
+            pc.row_step = (uint)outBite;
+            pc.point_step = (uint)(block1Length + block2Length);
+
+            foreach (var feeld in pc.fields)
+                if (feeld.name.Equals("rgb"))
+                {
+                    feeld.offset = (uint)block1Length;
+                    break;
+                }
+        }
+
         //*********************************************************************
         ///
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="missionStatus"></param>
+        /// <param name="pc"></param>
         /// 
         //*********************************************************************
         private int pointCloudMessageCount = 1;
@@ -201,7 +288,12 @@ namespace TTMobileClient.Views
 
         private void PointCloudSubscriptionHandler(RosSharp.RosBridgeClient.Messages.Sensor.PointCloud2 pc)
         {
+
             pointCloudAccumulatedSize += pc.data.Length;
+
+            PackPointCloud(pc);
+
+            //DesrializePointCloud(pc);
 
             System.Diagnostics.Debug.WriteLine(
                 "--------- PointCloud Data {0}, size: {1}, total: {2} ---------", 
