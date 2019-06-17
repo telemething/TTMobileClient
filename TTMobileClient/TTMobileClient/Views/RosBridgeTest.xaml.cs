@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using RosClientLib;
+using RosSharp.RosBridgeClient.Messages.Sensor;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
@@ -278,6 +282,61 @@ namespace TTMobileClient.Views
         //*********************************************************************
         ///
         /// <summary>
+        /// Save a Pointcloud2 file
+        /// </summary>
+        /// <param name="pc"></param>
+        /// <param name="fileName"></param>
+        ///
+        //*********************************************************************
+
+        private void SavePointCloudFile(RosSharp.RosBridgeClient.Messages.Sensor.PointCloud2 pc, string fileName)
+        {
+            var data = pc.data;
+            pc.data = null;
+            var header = JsonConvert.SerializeObject(pc);
+
+            var mainDir = Xamarin.Essentials.FileSystem.AppDataDirectory;
+
+            using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(
+                System.IO.File.Open(mainDir + "\\" + fileName, System.IO.FileMode.Create)))
+            {
+                writer.Write(header);
+                writer.Write(data, 0, (int)pc.row_step);
+            }
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// Read a Pointcloud2 file
+        /// </summary>
+        /// <param name="fileName"></param>
+        ///
+        //*********************************************************************
+
+        private RosSharp.RosBridgeClient.Messages.Sensor.PointCloud2 ReadPointCloudFile(string fileName)
+        {
+            RosSharp.RosBridgeClient.Messages.Sensor.PointCloud2 pc = new PointCloud2();
+
+            var mainDir = Xamarin.Essentials.FileSystem.AppDataDirectory;
+
+            if (System.IO.File.Exists(mainDir + "\\" + fileName))
+            {
+                using (System.IO.BinaryReader reader = new System.IO.BinaryReader(
+                    System.IO.File.Open(mainDir + "\\" + fileName, System.IO.FileMode.Open)))
+                {
+                    var header = reader.ReadString();
+                    pc = JsonConvert.DeserializeObject<RosSharp.RosBridgeClient.Messages.Sensor.PointCloud2>(header);
+                    pc.data = reader.ReadBytes((int)pc.row_step);
+                }
+            }
+
+            return pc;
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="pc"></param>
@@ -298,6 +357,10 @@ namespace TTMobileClient.Views
             System.Diagnostics.Debug.WriteLine(
                 "--------- PointCloud Data {0}, size: {1}, total: {2} ---------", 
                 pointCloudMessageCount++, pc.data.Length, pointCloudAccumulatedSize);
+
+            SavePointCloudFile(pc, "pointcloudfile.bin");
+
+            var pc2 = ReadPointCloudFile("pointcloudfile.bin");
 
             // do something to prevent high frequency updating
 

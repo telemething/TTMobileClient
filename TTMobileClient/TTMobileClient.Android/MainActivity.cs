@@ -25,6 +25,9 @@ namespace TTMobileClient.Droid
             Xamarin.FormsMaps.Init(this, savedInstanceState);
             //Microsoft.WindowsAzure.MobileServices.CurrentPlatform.Init();
 
+            // https://docs.microsoft.com/en-us/xamarin/essentials/get-started?tabs=windows%2Candroid
+            Xamarin.Essentials.Platform.Init(this, savedInstanceState); 
+
             // https://github.com/jamesmontemagno/PermissionsPlugin
             Plugin.CurrentActivity.CrossCurrentActivity.Current.Init(this, savedInstanceState);
 
@@ -55,6 +58,9 @@ namespace TTMobileClient.Droid
         public override void OnRequestPermissionsResult(int requestCode,
             string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
         {
+            // https://docs.microsoft.com/en-us/xamarin/essentials/get-started?tabs=windows%2Candroid
+            Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+
             PermissionsImplementation.Current.OnRequestPermissionsResult(
                 requestCode, permissions, grantResults);
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
