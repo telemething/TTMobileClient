@@ -27,6 +27,7 @@ namespace TTMobileClient.iOS
         MKPolylineRenderer polylineRenderer;
         private readonly UITapGestureRecognizer _tapRecogniser;
         private bool _viewingPinInfo = false;
+        private CustomMap _formsMap;
 
         //*********************************************************************
         ///
@@ -238,10 +239,11 @@ namespace TTMobileClient.iOS
             {
                 var nativeMap = Control as MKMapView;
 
-                nativeMap.GetViewForAnnotation = null;
+                nativeMap.GetViewForAnnotation -= GetViewForAnnotation;
                 nativeMap.CalloutAccessoryControlTapped -= OnCalloutAccessoryControlTapped;
                 nativeMap.DidSelectAnnotationView -= OnDidSelectAnnotationView;
                 nativeMap.DidDeselectAnnotationView -= OnDidDeselectAnnotationView;
+                nativeMap.MapLoaded -= OnMapLoaded;
 
                 Control.RemoveGestureRecognizer(_tapRecogniser);
 
@@ -249,16 +251,32 @@ namespace TTMobileClient.iOS
 
             if (e.NewElement != null)
             {
-                var formsMap = (CustomMap)e.NewElement;
+                _formsMap = (CustomMap)e.NewElement;
                 var nativeMap = Control as MKMapView;
 
                 nativeMap.GetViewForAnnotation = GetViewForAnnotation;
                 nativeMap.CalloutAccessoryControlTapped += OnCalloutAccessoryControlTapped;
                 nativeMap.DidSelectAnnotationView += OnDidSelectAnnotationView;
                 nativeMap.DidDeselectAnnotationView += OnDidDeselectAnnotationView;
+                nativeMap.MapLoaded += OnMapLoaded;
 
                 Control.AddGestureRecognizer(_tapRecogniser);
             }
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        ///
+        //*********************************************************************
+
+        private void OnMapLoaded(object sender, EventArgs e)
+        {
+            _formsMap?.MapReadyCallback();
         }
 
         //*********************************************************************
@@ -280,9 +298,9 @@ namespace TTMobileClient.iOS
             if (annotation is MKUserLocation)
                 return null;
 
-            // If we have no custom pins the this is not a custom pin
-            //if (0 == _waypoints.Count)
-            //    return null;
+            // If we have no waypoints or tracked objects then this is not a waypoint or tracked object
+            if (0 == _waypoints.Count && 0 == _trackedObjects.Count)
+                return null;
 
             var waypoint = GetWaypoint(annotation as MKPointAnnotation);
             if (waypoint != null)
@@ -466,6 +484,12 @@ namespace TTMobileClient.iOS
 
         Waypoint GetWaypoint(MKPointAnnotation annotation)
         {
+            if (null == annotation)
+                return null;
+
+            if (null == _waypoints)
+                return null;
+
             var position = new Position(annotation.Coordinate.Latitude,
                 annotation.Coordinate.Longitude);
 
@@ -488,6 +512,12 @@ namespace TTMobileClient.iOS
 
         TrackedObject GetTrackedObject(MKPointAnnotation annotation)
         {
+            if (null == annotation)
+                return null;
+
+            if (null == _trackedObjects)
+                return null;
+
             var position = new Position(annotation.Coordinate.Latitude,
                 annotation.Coordinate.Longitude);
 
@@ -510,6 +540,12 @@ namespace TTMobileClient.iOS
 
         TrackedObject GetTrackedObject(string id)
         {
+            if (null == id)
+                return null;
+
+            if (null == _trackedObjects)
+                return null;
+
             foreach (var to in _trackedObjects)
                 if (to.UniqueId.Equals(id))
                     return to;

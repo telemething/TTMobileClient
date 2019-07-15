@@ -24,7 +24,7 @@
             <x:Arguments>
                 <views:AboutPage />
             </x:Arguments>
-        </NavigationPage>-->
+        </NavigationPage>
 
         <NavigationPage Title="OpenGlTest">
             <NavigationPage.Icon>
@@ -35,7 +35,7 @@
             <x:Arguments>
                 <views:OpenGlTest />
             </x:Arguments>
-        </NavigationPage>
+        </NavigationPage>-->
 
         <NavigationPage Title="Map">
             <NavigationPage.Icon>

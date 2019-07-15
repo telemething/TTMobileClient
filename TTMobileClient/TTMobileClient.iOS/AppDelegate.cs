@@ -25,8 +25,8 @@ namespace TTMobileClient.iOS
             global::Xamarin.Forms.Forms.Init();
             Xamarin.FormsMaps.Init();
             //Microsoft.WindowsAzure.MobileServices.CurrentPlatform.Init();
-            //LoadApplication(new App());
-            LoadApplication(new TTMobileClient.OpenGLDemoApp());
+            LoadApplication(new App());
+            //LoadApplication(new TTMobileClient.OpenGLDemoApp());
 
             return base.FinishedLaunching(app, options);
         }

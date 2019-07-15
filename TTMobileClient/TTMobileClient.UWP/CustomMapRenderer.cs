@@ -232,6 +232,7 @@ namespace TTMobileClient.UWP
 
                 nativeMap.MapElementClick += OnMapElementClick;
                 nativeMap.MapTapped += NativeMapOnMapTapped;
+                nativeMap.Loaded += NativeMapOnLoaded;
 
                 // Pins
                 foreach (var pin in _waypoints)
@@ -303,6 +304,21 @@ namespace TTMobileClient.UWP
                 //*************************************
                 //*************************************
             }
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        ///
+        //*********************************************************************
+
+        private void NativeMapOnLoaded(object sender, RoutedEventArgs e)
+        {
+            formsMap.MapReadyCallback();
         }
 
         //*********************************************************************

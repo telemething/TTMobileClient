@@ -358,7 +358,7 @@ namespace TTMobileClient.Views
                 "--------- PointCloud Data {0}, size: {1}, total: {2} ---------", 
                 pointCloudMessageCount++, pc.data.Length, pointCloudAccumulatedSize);
 
-            SavePointCloudFile(pc, "pointcloudfile.bin");
+            //SavePointCloudFile(pc, "pointcloudfile.bin");
 
             var pc2 = ReadPointCloudFile("pointcloudfile.bin");
 

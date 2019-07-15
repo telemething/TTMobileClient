@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Xamarin.Forms.Maps;
 
@@ -76,6 +77,7 @@ namespace TTMobileClient
     public class CustomMap : Map
     {
         public event EventHandler<OnMapClickEventArgs> OnMapClick;
+        public event EventHandler OnMapReady;
 
         //*********************
         public List<Position> ShapeCoordinates { get; set; }
@@ -146,11 +148,16 @@ namespace TTMobileClient
             Change = new ChangeHappened(trackedObject, ChangeHappened.ChangeTypeEnum.Added);
        }
 
-       public void MapClickCallback(double lat, double lon, double alt)
-       {
-           OnMapClick?.Invoke(this,
-               new OnMapClickEventArgs(lat, lon, alt));
-       }
+        public void MapClickCallback(double lat, double lon, double alt)
+        {
+            OnMapClick?.Invoke(this,
+                new OnMapClickEventArgs(lat, lon, alt));
+        }
+
+        public void MapReadyCallback()
+        {
+            OnMapReady?.Invoke(this, new EventArgs());
+        }
 
        public void MapClickCallback(double lat, double lon)
        {

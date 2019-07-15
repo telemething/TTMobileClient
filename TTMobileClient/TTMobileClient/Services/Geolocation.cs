@@ -25,11 +25,11 @@ namespace TTMobileClient.Services
 
                 position = await locator.GetLastKnownLocationAsync();
 
-                if (position != null)
+                /*if (position != null)
                 {
                     //got a cahched position, so let's use it.
                     return position;
-                }
+                }*/
 
                 if (!locator.IsGeolocationAvailable || !locator.IsGeolocationEnabled)
                 {

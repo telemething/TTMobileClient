@@ -218,7 +218,11 @@ namespace TTMobileClient.Droid
             NativeMap.InfoWindowClick += OnInfoWindowClick;
             NativeMap.SetInfoWindowAdapter(this);
 
-            if(0 < routeCoordinates?.Count)
+            var formsMap = Element as CustomMap;
+
+            formsMap?.MapReadyCallback();
+
+            if (0 < routeCoordinates?.Count)
             {
                 var polylineOptions = new PolylineOptions();
                 polylineOptions.InvokeColor(0x66FF0000);

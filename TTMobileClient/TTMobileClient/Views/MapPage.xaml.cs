@@ -49,6 +49,8 @@ namespace TTMobileClient.Views
 
         #region private 
 
+        private int _heartbeatPeriodSeconds = 30;   //TODO : make this a config item
+
         private IRosClient _rosClient = null;
 
         private CustomMap _map;
@@ -131,8 +133,6 @@ namespace TTMobileClient.Views
         {
             base.OnAppearing();
             ShowMap();
-            //Xamarin.Forms.Device.BeginInvokeOnMainThread(ShowCurrentPositionOnMap);
-
 
             //Xamarin.Forms.Device.BeginInvokeOnMainThread(ConnectToIotHub);
             //Xamarin.Forms.Device.BeginInvokeOnMainThread(StartTelemetry);
@@ -168,7 +168,8 @@ namespace TTMobileClient.Views
                 };
 
                 _map.OnMapClick += OnMapClick;
-
+                _map.OnMapReady += MapOnOnMapReady;
+                
                 //****************
 
 
@@ -360,6 +361,21 @@ namespace TTMobileClient.Views
                     "Error", "Error: " + ex.Message, "Ok");
                 return false;
             }
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        ///
+        //*********************************************************************
+
+        private void MapOnOnMapReady(object sender, EventArgs e)
+        {
+            Xamarin.Forms.Device.BeginInvokeOnMainThread(ShowCurrentPositionOnMap);
         }
 
         private async Task<bool> ShowMapy()
@@ -592,7 +608,10 @@ namespace TTMobileClient.Views
             try
             {
                 pos = await Services.Geolocation.GetCurrentPosition();
-            }
+
+                _map.MoveToRegion(MapSpan.FromCenterAndRadius(
+                    new Position(pos.Latitude, pos.Longitude), Distance.FromMiles(0.3)));
+           }
             catch (Exception ex)
             {
                 await App.Current.MainPage.DisplayAlert(
@@ -601,8 +620,6 @@ namespace TTMobileClient.Views
                 return;
             }
 
-            _map.MoveToRegion(MapSpan.FromCenterAndRadius(
-                new Position(pos.Latitude, pos.Longitude), Distance.FromMiles(0.3)));
         }
 
         //*********************************************************************
@@ -673,7 +690,7 @@ namespace TTMobileClient.Views
             object obj = null;
             _heartbeatTimer = new Timer(HeartbeatTimerCallback, obj, 
                 new TimeSpan(0, 0, 0, 0), 
-                new TimeSpan(0, 0, 5, 0));
+                new TimeSpan(0, 0, 0, _heartbeatPeriodSeconds));
         }
 
         //*********************************************************************
