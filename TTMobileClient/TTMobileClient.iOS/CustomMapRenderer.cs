@@ -6,7 +6,6 @@ using CoreGraphics;
 using TTMobileClient;
 using TTMobileClient.iOS;
 using MapKit;
-using UIKit;
 using Xamarin.Forms;
 using Xamarin.Forms.Maps;
 using Xamarin.Forms.Maps.iOS;
@@ -305,10 +304,10 @@ namespace TTMobileClient.iOS
             var waypoint = GetWaypoint(annotation as MKPointAnnotation);
             if (waypoint != null)
             {
-                annotationView = mapView.DequeueReusableAnnotation(waypoint.Id.ToString());
+                annotationView = mapView.DequeueReusableAnnotation(waypoint.MarkerId.ToString());
                 if (annotationView == null)
                 {
-                    annotationView = new CustomMKAnnotationView(annotation, waypoint.Id.ToString())
+                    annotationView = new CustomMKAnnotationView(annotation, waypoint.MarkerId.ToString())
                     {
                         Image = UIImage.FromFile("pin.png"),
                         CalloutOffset = new CGPoint(0, 0),
@@ -317,7 +316,7 @@ namespace TTMobileClient.iOS
                     };
 
                     ((CustomMKAnnotationView)annotationView).subjectObject = waypoint;
-                    ((CustomMKAnnotationView)annotationView).Id = waypoint.Id.ToString();
+                    ((CustomMKAnnotationView)annotationView).Id = waypoint.MarkerId.ToString();
                     ((CustomMKAnnotationView)annotationView).Url = waypoint.Url;
                 }
 
@@ -325,13 +324,15 @@ namespace TTMobileClient.iOS
                 return annotationView;
             }
 
+            var ddd = new UIImageView(UIImage.FromFile("uav.png"));
+
             var trackedObject = GetTrackedObject(annotation as MKPointAnnotation);
             if (trackedObject != null)
             {
-                annotationView = mapView.DequeueReusableAnnotation(trackedObject.Id.ToString());
+                annotationView = mapView.DequeueReusableAnnotation(trackedObject.MarkerId.ToString());
                 if (annotationView == null)
                 {
-                    annotationView = new TrackedObjectAnnotationView(annotation, trackedObject.Id.ToString())
+                    annotationView = new TrackedObjectAnnotationView(annotation, trackedObject.MarkerId.ToString())
                     {
                         Image = UIImage.FromFile("uav.png"),
                         CalloutOffset = new CGPoint(0, 0),
@@ -340,7 +341,7 @@ namespace TTMobileClient.iOS
                     };
 
                     ((TrackedObjectAnnotationView)annotationView).subjectObject = trackedObject;
-                    ((TrackedObjectAnnotationView)annotationView).Id = trackedObject.Id.ToString();
+                    ((TrackedObjectAnnotationView)annotationView).Id = trackedObject.MarkerId.ToString();
                     ((TrackedObjectAnnotationView)annotationView).Url = trackedObject.Url;
                 }
 

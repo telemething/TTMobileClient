@@ -17,6 +17,8 @@ namespace TTMobileClient
     public class Waypoint : Pin
     {
         public string Url { get; set; }
+        public object Tag { get; set; }
+        public bool IsActive { get; set; }
     }
 
     public class TrackedObject : Pin
@@ -24,7 +26,7 @@ namespace TTMobileClient
         public string UniqueId;
         public string Url { get; set; }
         public string Name { get; set; }
-        public object tag { get; set; }
+        public object Tag { get; set; }
         public object nativeMapElement { get; set; }
     }
 

@@ -16,6 +16,7 @@ using Newtonsoft.Json;
 using Plugin.Geolocator;
 using RosClientLib;
 using RosSharp.RosBridgeClient.Messages.Test;
+using Xamarin.Essentials;
 using Xamarin.Forms;
 using Xamarin.Forms.Internals;
 using Xamarin.Forms.Maps;
@@ -43,7 +44,8 @@ namespace TTMobileClient.Views
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class MapPage : ContentPage
     {
-        string TestUri = "ws://192.168.1.30:9090";
+        //string TestUri = "ws://192.168.1.30:9090";
+        string TestUri = "ws://theflyingzephyr.ddns.net:9090";
         double TestLat = 47.6062;
         double TestLong = -122.3321;
 
@@ -131,6 +133,15 @@ namespace TTMobileClient.Views
 
         protected override void OnAppearing()
         {
+            var ff1 = Xamarin.Essentials.DeviceInfo.DeviceType;
+            var ff2 = Xamarin.Essentials.DeviceInfo.Idiom;
+            var ff3 = Xamarin.Essentials.DeviceInfo.Manufacturer;
+            var ff4 = Xamarin.Essentials.DeviceInfo.Model;
+            var ff5 = Xamarin.Essentials.DeviceInfo.Name;
+            var ff6 = Xamarin.Essentials.DeviceInfo.Platform;
+            var ff7 = Xamarin.Essentials.DeviceInfo.Version;
+            var ff8 = Xamarin.Essentials.DeviceInfo.VersionString;
+
             base.OnAppearing();
             ShowMap();
 
@@ -512,7 +523,8 @@ namespace TTMobileClient.Views
                 Label = "Waypoint",
                 Address = $"Lat: {lat}, Lon: {lon}, alt: {alt}",
                 Id = "Waypoint",
-                Url = "http://www.telemething.com/"
+                Url = "http://www.telemething.com/",
+                IsActive = true
             });
         }
 
@@ -714,9 +726,19 @@ namespace TTMobileClient.Views
             catch (Exception e)
             {
                 Console.WriteLine(e);
+
+                if (Xamarin.Essentials.DeviceInfo.DeviceType == DeviceType.Virtual &&
+                    Xamarin.Essentials.DeviceInfo.Platform == DevicePlatform.iOS)
+                {
+                    Console.WriteLine("Forgot to set location in iOS simulator");
+                    lat = 47.468502;
+                    lon = -121.7674;
+                }
+                else
+                    return;
             }
 
-            SendPositionUpdate(lat, lon);
+            //SendPositionUpdate(lat, lon);
         }
 
         //*********************************************************************
@@ -818,9 +840,10 @@ namespace TTMobileClient.Views
 
             // travel to each waypoint
             foreach (var routeCoord in _map.Waypoints)
-                waypoints.AddWaypoint(Mavros.Command.NAV_WAYPOINT,
-                    routeCoord.Position.Latitude, routeCoord.Position.Longitude, 30, 
-                    false, true, 5, 0, 0, 0);
+                if(routeCoord.IsActive)
+                    waypoints.AddWaypoint(Mavros.Command.NAV_WAYPOINT,
+                        routeCoord.Position.Latitude, routeCoord.Position.Longitude, 30, 
+                        false, true, 5, 0, 0, 0);
 
             // return home and land
             waypoints.AddWaypoint(Mavros.Command.NAV_LAND,
@@ -1118,7 +1141,8 @@ namespace TTMobileClient.Views
                 Label = "Xamarin San Francisco Office",
                 Address = "394 Pacific Ave, San Francisco CA",
                 Id = "Xamarin",
-                Url = "http://xamarin.com/about/"
+                Url = "http://xamarin.com/about/",
+                IsActive = true
             };
 
             _map.Waypoints = new List<Waypoint> { pin };

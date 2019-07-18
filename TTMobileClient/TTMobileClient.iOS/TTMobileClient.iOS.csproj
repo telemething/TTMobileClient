@@ -193,5 +193,14 @@
   <ItemGroup>
     <BundleResource Include="Resources\uav.png" />
   </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\mission.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\plan.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\view.png" />
+  </ItemGroup>
   <Import Project="..\..\OpenGLDemo\OpenGLDemo.projitems" Label="Shared" />
 </Project>

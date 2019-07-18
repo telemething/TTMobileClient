@@ -95,6 +95,9 @@ namespace TTMobileClient.UWP
                         case ChangeHappened.ChangeTypeEnum.Added:
                             AddWaypoint(newPin);
                             break;
+                        case ChangeHappened.ChangeTypeEnum.Removed:
+                            RemoveWaypoint(newPin);
+                            break;
                     }
 
                 if (newObject is TrackedObject to)
@@ -149,7 +152,7 @@ namespace TTMobileClient.UWP
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="newPin"></param>
+        /// <param name="changedTO"></param>
         ///
         //*********************************************************************
 
@@ -194,10 +197,32 @@ namespace TTMobileClient.UWP
                     MapElementCollisionBehavior.RemainVisible,
                 Location = snPoint,
                 NormalizedAnchorPoint =
-                    new Windows.Foundation.Point(0.5, 1.0)
+                    new Windows.Foundation.Point(0.5, 1.0),
+                Tag = newPin
             };
 
             nativeMap.MapElements.Add(mapIcon);
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="waypoint"></param>
+        ///
+        //*********************************************************************
+
+        private void RemoveWaypoint(Waypoint waypoint)
+        {
+            waypoint.IsActive = false;
+
+            var foundWaypoint = nativeMap.MapElements.FirstOrDefault(x => x.Tag == waypoint);
+
+            if (null == foundWaypoint)
+                return;
+
+            nativeMap.MapElements.Remove(foundWaypoint);
         }
 
         //*********************************************************************
