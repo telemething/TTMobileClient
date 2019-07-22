@@ -17,7 +17,7 @@ namespace TTMobileClient.Views
     {
         private IRosClient _rosClient = null;
         private ConnectionStateEnum _connectionState = ConnectionStateEnum.Unknown;
-        string TestUri = "ws://192.168.1.30:9090";
+        string TestUri = AppSettings.DefaultRobotRosbridgeUrl;
 
         private ConnectionStateEnum ConnectionState
         {

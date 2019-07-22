@@ -44,10 +44,9 @@ namespace TTMobileClient.Views
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class MapPage : ContentPage
     {
-        //string TestUri = "ws://192.168.1.30:9090";
-        string TestUri = "ws://theflyingzephyr.ddns.net:9090";
-        double TestLat = 47.6062;
-        double TestLong = -122.3321;
+        string TestUri = AppSettings.DefaultRobotRosbridgeUrl;
+        private double TestLat = AppSettings.DefaultGeoCoordsLat;
+        private double TestLong = AppSettings.DefaultGeoCoordsLon;
 
         #region private 
 

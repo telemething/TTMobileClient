@@ -4,8 +4,32 @@
              x:Class="TTMobileClient.Views.WebView">
     <ContentPage.Content>
         <StackLayout>
-            <!--<WebView x:Name="ImageContainer" HeightRequest="1000" WidthRequest="1000" />-->
-            <WebView x:Name="WebContainer" HeightRequest="1000" WidthRequest="1000" Source="https://get.webgl.org/" />
+            <Picker Title=""
+                    x:Name="TopicPicker"
+                    VerticalOptions="CenterAndExpand"
+                    Margin="10, 0"
+                    SelectedIndexChanged="OnPickerSelectedIndexChanged">
+                <Picker.Items>
+                    <x:String>Aqua</x:String>
+                    <x:String>Black</x:String>
+                    <x:String>Blue</x:String>
+                    <x:String>Fuchsia</x:String>
+                    <x:String>Gray</x:String>
+                    <x:String>Green</x:String>
+                    <x:String>Lime</x:String>
+                    <x:String>Maroon</x:String>
+                    <x:String>Navy</x:String>
+                    <x:String>Olive</x:String>
+                    <x:String>Purple</x:String>
+                    <x:String>Red</x:String>
+                    <x:String>Silver</x:String>
+                    <x:String>Teal</x:String>
+                    <x:String>White</x:String>
+                    <x:String>Yellow</x:String>
+                </Picker.Items>
+            </Picker>
+            <WebView x:Name="ImageContainer" HeightRequest="1000" WidthRequest="1000" VerticalOptions="Fill"  HorizontalOptions="Fill" />
+            <!--<WebView x:Name="WebContainer" HeightRequest="1000" WidthRequest="1000" Source="https://get.webgl.org/" />-->
         </StackLayout>
     </ContentPage.Content>
 </ContentPage>

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -79,6 +81,9 @@ namespace RosClientLib
         void CallService<TOut>(
             IRosOp rosOp, RosClientLib.RosClient.ServiceCallback<TOut> callback) 
             where TOut : IRosMessage;
+
+        void FetchTopicList(string topicTypeName, 
+            RosClientLib.RosClient.ServiceCallback<TopicList.TopicListReqResp> callback);
     }
 
     public class RosClient : IRosClient
@@ -313,6 +318,43 @@ namespace RosClientLib
             IRosOp rosOp, ServiceCallback<TOut> callback)
         {
             rosOp.CallService(this, callback);
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        ///
+        //*********************************************************************
+
+        async void IRosClient.FetchTopicList(string topicTypeName, 
+            ServiceCallback<TopicList.TopicListReqResp> callback)
+        {
+            IRosOp TListService = new TopicList();
+
+            TListService.CallService< TopicList.TopicListReqResp>(this,
+                resp =>
+                {
+                    if (resp.success)
+                    {
+                        try
+                        {
+                            var topics = resp.rosTopics.Where(topic => topic.type.Equals(topicTypeName));
+                            var topicsList = topics.ToList<TopicList.RosTopic>();
+                            topicsList.Sort((x, y) => string.Compare(x.topic, y.topic));
+                            callback.Invoke(new TopicList.TopicListReqResp(){ rosTopics = topicsList, success = true});
+                        }
+                        catch (Exception e)
+                        {
+                            callback.Invoke(new TopicList.TopicListReqResp() { success = false });
+                        }
+                    }
+                    else
+                    {
+                        callback.Invoke(new TopicList.TopicListReqResp() { success = false });
+                    }
+                });
         }
 
         #region Samples
@@ -570,6 +612,7 @@ namespace RosClientLib
             result = new std_srvs.TriggerResponse(true, "service response message");
             return true;
         }
+
     }
 
     #endregion

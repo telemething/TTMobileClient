@@ -121,6 +121,11 @@ namespace TTMobileClient.iOS
                             _waypoints.Add(newWaypoint);
                             formsMap.Pins.Add(newWaypoint);
                             break;
+                        case ChangeHappened.ChangeTypeEnum.Removed:
+                            //_waypoints.Remove(newWaypoint);
+                            newWaypoint.IsActive = false;
+                            formsMap.Pins.Remove(newWaypoint);
+                            break;
                     }
 
                 if (newObject is TrackedObject to)
@@ -253,7 +258,7 @@ namespace TTMobileClient.iOS
                 _formsMap = (CustomMap)e.NewElement;
                 var nativeMap = Control as MKMapView;
 
-                nativeMap.GetViewForAnnotation = GetViewForAnnotation;
+                nativeMap.GetViewForAnnotation += GetViewForAnnotation;
                 nativeMap.CalloutAccessoryControlTapped += OnCalloutAccessoryControlTapped;
                 nativeMap.DidSelectAnnotationView += OnDidSelectAnnotationView;
                 nativeMap.DidDeselectAnnotationView += OnDidDeselectAnnotationView;
@@ -523,7 +528,7 @@ namespace TTMobileClient.iOS
                 annotation.Coordinate.Longitude);
 
             foreach (var pin in _trackedObjects)
-                if (pin.Position == position)
+                if (pin.Position.Equals(position))
                     return pin;
 
             return null;
