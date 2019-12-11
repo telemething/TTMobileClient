@@ -51,6 +51,11 @@ namespace TTMobileClient.Views
         #region private 
 
         private int _heartbeatPeriodSeconds = 30;   //TODO : make this a config item
+        string _udpBroadcaseIP = "192.168.1.255"; //*** TODO * Make this a config item
+        int _thingTelemPort = 45679; //*** TODO * Make this a config item
+
+
+        private Repeater _telemetryRepeater = new Repeater();
 
         private IRosClient _rosClient = null;
 
@@ -109,11 +114,9 @@ namespace TTMobileClient.Views
         #endregion
 
         //*********************************************************************
-        ///
         /// <summary>
         /// Constructor
         /// </summary>
-        /// 
         //*********************************************************************
 
         public MapPage()
@@ -123,11 +126,9 @@ namespace TTMobileClient.Views
         }
 
         //*********************************************************************
-        ///
         /// <summary>
         /// The page is about to appear
         /// </summary>
-        /// 
         //*********************************************************************
 
         protected override void OnAppearing()
@@ -143,6 +144,7 @@ namespace TTMobileClient.Views
 
             base.OnAppearing();
             ShowMap();
+            StartRepeater(); //*** TODO * We don't always want to runt this, make it a config item
 
             //Xamarin.Forms.Device.BeginInvokeOnMainThread(ConnectToIotHub);
             //Xamarin.Forms.Device.BeginInvokeOnMainThread(StartTelemetry);
@@ -151,11 +153,34 @@ namespace TTMobileClient.Views
         }
 
         //*********************************************************************
-        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        //*********************************************************************
+
+        private async Task<bool> StartRepeater()
+        {
+            try
+            {
+                _telemetryRepeater.AddTransport(Repeater.TransportEnum.UDP, 
+                    Repeater.DialectEnum.ThingTelem, _udpBroadcaseIP, _thingTelemPort);
+            }
+            catch (Exception ex)
+            {
+                //logger.DebugLogError("Fatal Error on permissions: " + ex.Message);
+                await App.Current.MainPage.DisplayAlert(
+                    "Error", "Error: " + ex.Message, "Ok");
+                return false;
+            }
+
+            return true;
+        }
+
+        //*********************************************************************
         /// <summary>
         /// Show the map, after getting permission from the OS to do so
         /// </summary>
-        /// 
         //*********************************************************************
 
         private async Task<bool> ShowMap()
@@ -1015,6 +1040,7 @@ namespace TTMobileClient.Views
             Xamarin.Forms.Device.BeginInvokeOnMainThread(
                 () =>
                 {
+                    _telemetryRepeater.Send(missionStatus);
                     _StatusLatLabel.Text = $"Lat: {missionStatus.x_lat}";
                     _StatusLongLabel.Text = $"Lon: {missionStatus.y_long}";
                     _StatusAltLabel.Text = $"Alt: {Math.Round(missionStatus.z_alt, 2)}";

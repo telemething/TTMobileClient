@@ -287,7 +287,7 @@ namespace OpenGLDemo
 
 			#if __ANDROID__
 
-				Bitmap b = BitmapFactory.DecodeByteArray (imageData, 0, imageData.Length);
+				Android.Graphics.Bitmap b = BitmapFactory.DecodeByteArray (imageData, 0, imageData.Length);
 
 			#elif __IOS__
 

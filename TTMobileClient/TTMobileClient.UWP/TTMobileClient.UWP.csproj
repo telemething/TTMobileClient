@@ -106,6 +106,7 @@
     </AppxManifest>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Assets\TT150x150Logo..png" />
     <Content Include="info.png" />
     <Content Include="monkey.png" />
     <Content Include="pin.png" />
