@@ -164,7 +164,7 @@ namespace TTMobileClient.Views
             try
             {
                 _telemetryRepeater.AddTransport(Repeater.TransportEnum.UDP, 
-                    Repeater.DialectEnum.ThingTelem, _udpBroadcaseIP, _thingTelemPort);
+                    Repeater.DialectEnum.ThingTelem, _udpBroadcaseIP, _thingTelemPort, 500);
             }
             catch (Exception ex)
             {

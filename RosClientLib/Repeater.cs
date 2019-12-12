@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Mail;
 using System.Text;
 using System.Threading.Tasks;
@@ -37,7 +38,7 @@ namespace RosClientLib
         //*********************************************************************
 
         public void AddTransport(TransportEnum transport,
-            DialectEnum dialect, string address, int port)
+            DialectEnum dialect, string address, int port, int minimumTimeSpanMs)
         {
             Transport newTransport;
             Dialect newDialect;
@@ -54,7 +55,7 @@ namespace RosClientLib
             switch (transport)
             {
                 case TransportEnum.UDP:
-                    newTransport = new TransportUdp(address, port, newDialect);
+                    newTransport = new TransportUdp(address, port, newDialect, minimumTimeSpanMs);
                     _TransportList.Add(newTransport);
                     break;
                 default:
@@ -157,14 +158,33 @@ namespace RosClientLib
 
     abstract class Transport
     {
-        protected string _destIP = "192.168.1.255";
+        protected string _destIP = "192.168.1.255"; //***
         protected int _destPort = 45679;
+        protected int _MinimumTimeSpanMs = 500;
         protected Dialect _dialect;
+        protected Transport _handlerTransport;
+
+        private Stopwatch _stopwatch = new Stopwatch();
 
         protected Transport()
-        { }
+        {
+            _stopwatch.Start();
+        }
 
-        public abstract Task<bool> Send(RosSharp.RosBridgeClient.Message message);
+        //public abstract Task<bool> Send(RosSharp.RosBridgeClient.Message message);
+
+        public abstract Task<bool> Send(Byte[] message);
+
+        public async Task<bool> Send(RosSharp.RosBridgeClient.Message message)
+        {
+            if (_stopwatch.ElapsedMilliseconds > _MinimumTimeSpanMs)
+            {
+                _stopwatch.Restart();
+                _handlerTransport.Send(Encoding.ASCII.GetBytes(_dialect.Translate(message)));
+            }
+            
+            return true;
+        }
     }
 
     //*************************************************************************
@@ -188,11 +208,13 @@ namespace RosClientLib
         /// <param name="dialect"></param>
         //*********************************************************************
 
-        public TransportUdp(string address, int port, Dialect dialect)
+        public TransportUdp(string address, int port, Dialect dialect, int minimumTimeSpanMs)
         {
-            base._destIP = address;
+            _handlerTransport = this;
+            _destIP = address;
             _destPort = port;
             _dialect = dialect;
+            _MinimumTimeSpanMs = minimumTimeSpanMs;
 
             sock = new System.Net.Sockets.Socket(
                 System.Net.Sockets.AddressFamily.InterNetwork, 
@@ -211,9 +233,15 @@ namespace RosClientLib
         /// <returns></returns>
         //*********************************************************************
 
-        public override async Task<bool> Send(RosSharp.RosBridgeClient.Message message)
+        /*public override async Task<bool> Send(RosSharp.RosBridgeClient.Message message)
         {
             sock.SendTo(Encoding.ASCII.GetBytes(_dialect.Translate(message)), endpoint);
+            return true;
+        }*/
+
+        public override async Task<bool> Send(Byte[] message)
+        {
+            sock.SendTo(message, endpoint);
             return true;
         }
     }
