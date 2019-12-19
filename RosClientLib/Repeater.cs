@@ -217,9 +217,10 @@ namespace RosClientLib
             _MinimumTimeSpanMs = minimumTimeSpanMs;
 
             sock = new System.Net.Sockets.Socket(
-                System.Net.Sockets.AddressFamily.InterNetwork, 
+                System.Net.Sockets.AddressFamily.InterNetwork,
                 System.Net.Sockets.SocketType.Dgram,
-                System.Net.Sockets.ProtocolType.Udp);
+                System.Net.Sockets.ProtocolType.Udp) 
+                {EnableBroadcast = true, ExclusiveAddressUse = false};
 
             ipaddr = System.Net.IPAddress.Parse(_destIP);
             endpoint = new System.Net.IPEndPoint(ipaddr, _destPort);
