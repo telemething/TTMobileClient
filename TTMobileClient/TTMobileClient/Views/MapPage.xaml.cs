@@ -16,11 +16,14 @@ using Newtonsoft.Json;
 using Plugin.Geolocator;
 using RosClientLib;
 using RosSharp.RosBridgeClient.Messages.Test;
+using TThingComLib;
+using TThingComLib.Messages;
 using Xamarin.Essentials;
 using Xamarin.Forms;
 using Xamarin.Forms.Internals;
 using Xamarin.Forms.Maps;
 using Xamarin.Forms.Xaml;
+using StartMission = RosClientLib.StartMission;
 
 
 /*namespace TTMobileClient.Views
@@ -55,7 +58,8 @@ namespace TTMobileClient.Views
         int _thingTelemPort = 45679; //*** TODO * Make this a config item
 
 
-        private Repeater _telemetryRepeater = new Repeater();
+        private TThingComLib.Repeater _telemetryRepeater = new TThingComLib.Repeater();
+        private TThingComLib.Listener _telemtryListener = null;
 
         private IRosClient _rosClient = null;
 
@@ -145,6 +149,7 @@ namespace TTMobileClient.Views
             base.OnAppearing();
             ShowMap();
             StartRepeater(); //*** TODO * We don't always want to runt this, make it a config item
+            StartListener(); //*** TODO * We don't always want to runt this, make it a config item
 
             //Xamarin.Forms.Device.BeginInvokeOnMainThread(ConnectToIotHub);
             //Xamarin.Forms.Device.BeginInvokeOnMainThread(StartTelemetry);
@@ -158,13 +163,66 @@ namespace TTMobileClient.Views
         /// </summary>
         /// <returns></returns>
         //*********************************************************************
+        private async Task<bool> StartListener()
+        {
+            _telemtryListener = new Listener(45679, GotMessageCallback);
+            return true;
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="command"></param>
+        //*********************************************************************
+        private void ProcessMessageCommand(TThingComLib.Messages.Command command)
+        {
+            switch (command.CommandId)
+            {
+                case CommandIdEnum.StartMission:
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(StartMission);
+                    break;
+                case CommandIdEnum.StopDrone:
+                    break;
+                case CommandIdEnum.ReturnHome:
+                    break;
+                case CommandIdEnum.LandDrone:
+                    break;
+            }
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="message"></param>
+        //*********************************************************************
+        private void GotMessageCallback(Message message)
+        {
+            if(message?.Commands != null)
+                foreach(var command in message.Commands)
+                    ProcessMessageCommand(command);
+
+            //if (null != message.Coord)
+            //if (null != message.Orient)
+            //if (null != message.Gimbal)
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        //*********************************************************************
 
         private async Task<bool> StartRepeater()
         {
             try
             {
-                _telemetryRepeater.AddTransport(Repeater.TransportEnum.UDP, 
-                    Repeater.DialectEnum.ThingTelem, _udpBroadcaseIP, _thingTelemPort, 500);
+                _telemetryRepeater.AddTransport(
+                    TThingComLib.Repeater.TransportEnum.UDP,
+                    TThingComLib.Repeater.DialectEnum.ThingTelem, 
+                    _udpBroadcaseIP, _thingTelemPort, 500);
             }
             catch (Exception ex)
             {
