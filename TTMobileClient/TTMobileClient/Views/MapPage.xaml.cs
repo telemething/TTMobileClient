@@ -59,7 +59,7 @@ namespace TTMobileClient.Views
 
 
         private TThingComLib.Repeater _telemetryRepeater = new TThingComLib.Repeater();
-        private TThingComLib.Listener _telemtryListener = null;
+        private TThingComLib.Listener _telemetryUdpListener = null;
 
         private IRosClient _rosClient = null;
 
@@ -165,7 +165,20 @@ namespace TTMobileClient.Views
         //*********************************************************************
         private async Task<bool> StartListener()
         {
-            _telemtryListener = new Listener(45679, GotMessageCallback);
+            try
+            {
+                _telemetryUdpListener = new Listener(45679, GotMessageCallback);
+                _telemetryUdpListener.Connect();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                //logger.DebugLogError("Fatal Error on permissions: " + ex.Message);
+                await App.Current.MainPage.DisplayAlert(
+                    "StartListener() Exception:", "Error: " + ex.Message, "Ok");
+                return false;
+            }
+
             return true;
         }
 
@@ -228,7 +241,7 @@ namespace TTMobileClient.Views
             {
                 //logger.DebugLogError("Fatal Error on permissions: " + ex.Message);
                 await App.Current.MainPage.DisplayAlert(
-                    "Error", "Error: " + ex.Message, "Ok");
+                    "StartRepeater() Exception:", "Error: " + ex.Message, "Ok");
                 return false;
             }
 
