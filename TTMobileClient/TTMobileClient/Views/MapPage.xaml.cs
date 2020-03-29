@@ -748,7 +748,7 @@ namespace TTMobileClient.Views
                 {
                     var status = await CrossPermissions.Current.CheckPermissionStatusAsync(permission);
 
-                    if (status != PermissionStatus.Granted)
+                    if (status != Plugin.Permissions.Abstractions.PermissionStatus.Granted)
                     {
                         if (await CrossPermissions.Current.ShouldShowRequestPermissionRationaleAsync(permission))
                         {
@@ -762,7 +762,8 @@ namespace TTMobileClient.Views
                         if (results.ContainsKey(permission))
                             status = results[permission];
 
-                        if (!(status == PermissionStatus.Granted || status == PermissionStatus.Unknown))
+                        if (!(status == Plugin.Permissions.Abstractions.PermissionStatus.Granted || 
+                            status == Plugin.Permissions.Abstractions.PermissionStatus.Unknown))
                         {
                             await App.Current.MainPage.DisplayAlert(
                                 "Permission Denied", 
