@@ -16,7 +16,7 @@ namespace RosClientLib
     public class StartMission : IRosOp
     {
         const string _RosServiceName = "/tt_mavros_wp_mission/StartMission_service";
-        private RosClient _rosClient;
+        //private RosClient _rosClient;
 
         #region Rosbridge message types
 

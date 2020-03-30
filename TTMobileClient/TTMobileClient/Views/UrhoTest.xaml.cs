@@ -10,7 +10,6 @@ using Xamarin.Forms.Xaml;
 
 using Urho;
 using Urho.Forms;
-using Urho;
 using Urho.Actions;
 using Urho.Gui;
 using Urho.Shapes;

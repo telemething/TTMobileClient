@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
-using Xamarin.Forms;
 //using OpenTK.Graphics.ES30;
 //using OpenTK;
 //using OpenTK.Graphics;

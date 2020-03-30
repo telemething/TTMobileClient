@@ -484,7 +484,7 @@ namespace TTMobileClient.Views
             Xamarin.Forms.Device.BeginInvokeOnMainThread(ShowCurrentPositionOnMap);
         }
 
-        private async Task<bool> ShowMapy()
+        /*private async Task<bool> ShowMapy()
         {
             if (!await GetPermissions(new List<Permission>()
                 { Permission.Location, Permission.LocationWhenInUse }))
@@ -564,7 +564,7 @@ namespace TTMobileClient.Views
                 await App.Current.MainPage.DisplayAlert("Error", "Error: " + ex.Message, "Ok");
                 return false;
             }
-        }
+        }*/
 
         //*********************************************************************
         ///
@@ -845,15 +845,15 @@ namespace TTMobileClient.Views
         ///
         //*********************************************************************
 
-        private async void ConnectToIotHub()
+        /*private async void ConnectToIotHub()
         {
             // missing AzureIotLib
-            /*_azureIotDevice = new AzureIotDevice();
+            //_azureIotDevice = new AzureIotDevice();
 
             //await ait.GetDeviceTwinList();
 
-            await _azureIotDevice.ConnectToDevice(GotAzureDeviceMessageCallback);*/
-        }
+            //await _azureIotDevice.ConnectToDevice(GotAzureDeviceMessageCallback);
+        }*/
 
         //*********************************************************************
         ///
@@ -1200,7 +1200,7 @@ namespace TTMobileClient.Views
         ///
         //*********************************************************************
 
-        private void GotAzureDeviceMessageCallback(byte[] messagepayload)
+        /*private void GotAzureDeviceMessageCallback(byte[] messagepayload)
         {
             if (null == messagepayload)
                 return;
@@ -1210,14 +1210,14 @@ namespace TTMobileClient.Views
             dynamic jsonObj = JsonConvert.DeserializeObject(strData);
 
             // missing AzureIotLib
-            /*string latS = jsonObj.a;
-            string lonS = jsonObj.o;
+            //string latS = jsonObj.a;
+            //string lonS = jsonObj.o;
 
-            var lat = Convert.ToDouble(latS);
-            var lon = Convert.ToDouble(lonS);
+            //var lat = Convert.ToDouble(latS);
+            //var lon = Convert.ToDouble(lonS);
 
-            Xamarin.Forms.Device.BeginInvokeOnMainThread(() => { ShowTrackedObjectLocation(lat, lon); });*/
-        }
+            //Xamarin.Forms.Device.BeginInvokeOnMainThread(() => { ShowTrackedObjectLocation(lat, lon); });
+        }*/
 
         #region Tests
 
@@ -1229,7 +1229,7 @@ namespace TTMobileClient.Views
         ///
         //*********************************************************************
 
-        private void BuildCustomPins()
+        /*private void BuildCustomPins()
         {
             var pin = new Waypoint
             {
@@ -1243,7 +1243,7 @@ namespace TTMobileClient.Views
             };
 
             _map.Waypoints = new List<Waypoint> { pin };
-        }
+        }*/
 
         //*********************************************************************
         ///
@@ -1253,13 +1253,13 @@ namespace TTMobileClient.Views
         ///
         //*********************************************************************
 
-        private void TestDropCustomPin()
+        /*private void TestDropCustomPin()
         {
             _map.Pins.Add(_map.Waypoints.First());
             _map.MoveToRegion(MapSpan.FromCenterAndRadius(
                 new Position(37.79752, -122.40183), 
                 Distance.FromMiles(1.0)));
-        }
+        }*/
 
         //*********************************************************************
         ///
@@ -1269,7 +1269,7 @@ namespace TTMobileClient.Views
         ///
         //*********************************************************************
 
-        private void TestDrawPolyline()
+        /*private void TestDrawPolyline()
         {
             _map.RouteCoordinates = new List<Position>()
             {
@@ -1294,7 +1294,7 @@ namespace TTMobileClient.Views
             Xamarin.Forms.Device.BeginInvokeOnMainThread(
                 () => _map.MoveToRegion(MapSpan.FromCenterAndRadius(
                 new Position(37.79752, -122.40183), Distance.FromMiles(1.0))));
-        }
+        }*/
 
         #endregion
     }

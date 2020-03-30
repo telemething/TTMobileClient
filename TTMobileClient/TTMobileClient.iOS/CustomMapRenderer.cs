@@ -18,11 +18,11 @@ namespace TTMobileClient.iOS
 {
     public class CustomMapRenderer : MapRenderer
     {
-        private int _pinDropDwellTime = 500;
+        private readonly int _pinDropDwellTime = 500;
 
         UIView customPinView;
-        List<Waypoint> _waypoints;
-        List<TrackedObject> _trackedObjects;
+        readonly List<Waypoint> _waypoints;
+        readonly List<TrackedObject> _trackedObjects;
         MKPolylineRenderer polylineRenderer;
         private readonly UITapGestureRecognizer _tapRecogniser;
         private bool _viewingPinInfo = false;
@@ -329,7 +329,7 @@ namespace TTMobileClient.iOS
                 return annotationView;
             }
 
-            var ddd = new UIImageView(UIImage.FromFile("uav.png"));
+            //var ddd = new UIImageView(UIImage.FromFile("uav.png"));
 
             var trackedObject = GetTrackedObject(annotation as MKPointAnnotation);
             if (trackedObject != null)
