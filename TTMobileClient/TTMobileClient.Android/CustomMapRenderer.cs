@@ -23,6 +23,7 @@ namespace TTMobileClient.Droid
         List<Waypoint> _waypoints;
         List<TrackedObject> _trackedObjects;
         List<Position> routeCoordinates;
+        SelfObject _selfObject;
         private bool _viewingPinInfo = false;
 
         //*********************************************************************
@@ -92,7 +93,56 @@ namespace TTMobileClient.Droid
                             ChangeTrackedObject(to);
                             break;
                     }
+
+                if (newObject is SelfObject so)
+                    switch (formsMap.change.ChangeType)
+                    {
+                        case ChangeHappened.ChangeTypeEnum.Added:
+                            AddSelfObject(so, formsMap);
+                            break;
+                        case ChangeHappened.ChangeTypeEnum.Changed:
+                            ChangeSelfObject(so);
+                            break;
+                    }
             }
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="to"></param>
+        /// <param name="formsMap"></param>
+        ///
+        //*********************************************************************
+
+        private void AddSelfObject(SelfObject so, CustomMap formsMap)
+        {
+            _selfObject = so;
+            formsMap.Pins.Add(so);
+            Control.GetMapAsync(this);
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="changedTO"></param>
+        ///
+        //*********************************************************************
+
+        private void ChangeSelfObject(SelfObject changedTO)
+        {
+            _selfObject.Position = new Position(
+                changedTO.Position.Latitude, changedTO.Position.Longitude);
+            _selfObject.PositionFromSensor = new Position(
+                changedTO.PositionFromSensor.Latitude, changedTO.PositionFromSensor.Longitude);
+            _selfObject.PositionOffset = new Position(
+                changedTO.PositionOffset.Latitude, changedTO.PositionOffset.Longitude);
+
+            Control.GetMapAsync(this);
         }
 
         //*********************************************************************
@@ -240,6 +290,12 @@ namespace TTMobileClient.Droid
             {
                 marker.SetIcon(BitmapDescriptorFactory.
                     FromResource(Resource.Drawable.uav));
+            }
+
+            if (pin is SelfObject so)
+            {
+                marker.SetIcon(BitmapDescriptorFactory.
+                    FromResource(Resource.Drawable.self));
             }
 
             else if (pin is Waypoint waypoint)

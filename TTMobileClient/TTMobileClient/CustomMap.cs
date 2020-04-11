@@ -30,6 +30,17 @@ namespace TTMobileClient
         public object nativeMapElement { get; set; }
     }
 
+    public class SelfObject : Pin
+    {
+        public string UniqueId;
+        public string Url { get; set; }
+        public string Name { get; set; }
+        public object Tag { get; set; }
+        public object nativeMapElement { get; set; }
+        public Position PositionFromSensor { get; set; }
+        public Position PositionOffset { get; set; }
+    }
+
     public class OnMapClickEventArgs : EventArgs
     {
         private double _lat;
@@ -92,6 +103,7 @@ namespace TTMobileClient
         public List<Position> routeCoordinates;
         private List<Waypoint> _Waypoints;
         private List<TrackedObject> _TrackedObjects;
+        private SelfObject _SelfObject;
 
         public ChangeHappened Change
         {
@@ -111,6 +123,12 @@ namespace TTMobileClient
             set { _TrackedObjects = value; OnPropertyChanged(); }
         }
 
+        public SelfObject SelfObject
+        {
+            get { return _SelfObject; }
+            set { _SelfObject = value; OnPropertyChanged(); }
+        }
+
         public List<Position> RouteCoordinates
         {
             get { return routeCoordinates; }
@@ -127,6 +145,7 @@ namespace TTMobileClient
        public void AddWaypoint(Waypoint waypoint)
        {
            _Waypoints.Add(waypoint);
+           //waypoint.MarkerClicked
            Change = new ChangeHappened(waypoint, ChangeHappened.ChangeTypeEnum.Added);
        }
 
@@ -145,10 +164,25 @@ namespace TTMobileClient
         }
 
         public void AddTrackedObject(TrackedObject trackedObject)
-       {
+        {
             _TrackedObjects.Add(trackedObject);
             Change = new ChangeHappened(trackedObject, ChangeHappened.ChangeTypeEnum.Added);
-       }
+        }
+
+        public void SetSelfObject(SelfObject selfObject)
+        {
+            ChangeHappened.ChangeTypeEnum change = ChangeHappened.ChangeTypeEnum.None;
+
+            if (null == _SelfObject)
+            {
+                _SelfObject = selfObject;
+                change = ChangeHappened.ChangeTypeEnum.Added;
+            }
+            else
+                change = ChangeHappened.ChangeTypeEnum.Changed;
+
+            Change = new ChangeHappened(selfObject, change);
+        }
 
         public void MapClickCallback(double lat, double lon, double alt)
         {

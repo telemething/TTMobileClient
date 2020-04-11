@@ -23,6 +23,7 @@ namespace TTMobileClient.iOS
         UIView customPinView;
         readonly List<Waypoint> _waypoints;
         readonly List<TrackedObject> _trackedObjects;
+        SelfObject _selfObject;
         MKPolylineRenderer polylineRenderer;
         private readonly UITapGestureRecognizer _tapRecogniser;
         private bool _viewingPinInfo = false;
@@ -128,6 +129,17 @@ namespace TTMobileClient.iOS
                             break;
                     }
 
+                if (newObject is SelfObject so)
+                    switch (formsMap.change.ChangeType)
+                    {
+                        case ChangeHappened.ChangeTypeEnum.Added:
+                            AddSelfObject(so, formsMap);
+                            break;
+                        case ChangeHappened.ChangeTypeEnum.Changed:
+                            ChangeSelfObject(so);
+                            break;
+                    }
+
                 if (newObject is TrackedObject to)
                     switch (formsMap.change.ChangeType)
                     {
@@ -164,6 +176,41 @@ namespace TTMobileClient.iOS
                 var routeOverlay = MKPolyline.FromCoordinates(coords);
                 nativeMap.AddOverlay(routeOverlay);
             }
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="to"></param>
+        /// <param name="formsMap"></param>
+        /// 
+        //*********************************************************************
+
+        private void AddSelfObject(SelfObject so, CustomMap formsMap)
+        {
+            _selfObject = so;
+            formsMap.Pins.Add(so);
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="to"></param>
+        ///
+        //*********************************************************************
+
+        private void ChangeSelfObject(SelfObject changedTO)
+        {
+            _selfObject.Position = new Position(
+                changedTO.Position.Latitude, changedTO.Position.Longitude);
+            _selfObject.PositionFromSensor = new Position(
+                changedTO.PositionFromSensor.Latitude, changedTO.PositionFromSensor.Longitude);
+            _selfObject.PositionOffset = new Position(
+                changedTO.PositionOffset.Latitude, changedTO.PositionOffset.Longitude);
         }
 
         //*********************************************************************
@@ -301,6 +348,28 @@ namespace TTMobileClient.iOS
 
             if (annotation is MKUserLocation)
                 return null;
+
+            if(_selfObject != null)
+            {
+                annotationView = mapView.DequeueReusableAnnotation(_selfObject.MarkerId.ToString());
+                if (annotationView == null)
+                {
+                    annotationView = new CustomMKAnnotationView(annotation, _selfObject.MarkerId.ToString())
+                    {
+                        Image = UIImage.FromFile("self.png"),
+                        CalloutOffset = new CGPoint(0, 0),
+                        LeftCalloutAccessoryView = new UIImageView(UIImage.FromFile("monkey.png")),
+                        RightCalloutAccessoryView = UIButton.FromType(UIButtonType.DetailDisclosure)
+                    };
+
+                    ((CustomMKAnnotationView)annotationView).subjectObject = _selfObject;
+                    ((CustomMKAnnotationView)annotationView).Id = _selfObject.MarkerId.ToString();
+                    ((CustomMKAnnotationView)annotationView).Url = _selfObject.Url;
+                }
+
+                annotationView.CanShowCallout = true;
+                return annotationView;
+            }
 
             // If we have no waypoints or tracked objects then this is not a waypoint or tracked object
             if (0 == _waypoints.Count && 0 == _trackedObjects.Count)

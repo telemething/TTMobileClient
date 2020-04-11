@@ -21,6 +21,7 @@ namespace TTMobileClient.UWP
         private CustomMap formsMap;
         List<Waypoint> _waypoints;
         List<TrackedObject> _trackedObjects;
+        SelfObject _selfObject;
         XamarinMapOverlay mapOverlay;
         bool xamarinOverlayShown = false;
 
@@ -100,6 +101,17 @@ namespace TTMobileClient.UWP
                             break;
                     }
 
+                if (newObject is SelfObject so)
+                    switch (formsMap.change.ChangeType)
+                    {
+                        case ChangeHappened.ChangeTypeEnum.Added:
+                            AddSelfObject(so);
+                            break;
+                        case ChangeHappened.ChangeTypeEnum.Changed:
+                            ChangeSelfObject(so);
+                            break;
+                    }
+
                 if (newObject is TrackedObject to)
                     switch (formsMap.change.ChangeType)
                     {
@@ -111,6 +123,69 @@ namespace TTMobileClient.UWP
                             break;
                     }
             }
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="newPin"></param>
+        ///
+        //*********************************************************************
+
+        private void AddSelfObject(SelfObject newSO)
+        {
+            var mapIcon = new MapIcon
+            {
+                Image = RandomAccessStreamReference.CreateFromUri(
+                    new Uri("ms-appx:///self.png")),
+                CollisionBehaviorDesired =
+                    MapElementCollisionBehavior.RemainVisible,
+                Location = new Geopoint(
+                    new BasicGeoposition
+                    {
+                        Latitude = newSO.Position.Latitude,
+                        Longitude = newSO.Position.Longitude
+                    }),
+                NormalizedAnchorPoint =
+                    new Windows.Foundation.Point(0.5, 1.0)
+            };
+
+            newSO.nativeMapElement = mapIcon;
+
+            _selfObject = newSO;
+
+            nativeMap.MapElements.Add(mapIcon);
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="changedTO"></param>
+        ///
+        //*********************************************************************
+
+        private void ChangeSelfObject(SelfObject changedSO)
+        {
+            _selfObject.Position = new Position(
+                changedSO.Position.Latitude, changedSO.Position.Longitude);
+            _selfObject.PositionFromSensor = new Position(
+                changedSO.PositionFromSensor.Latitude, changedSO.PositionFromSensor.Longitude);
+            _selfObject.PositionOffset = new Position(
+                changedSO.PositionOffset.Latitude, changedSO.PositionOffset.Longitude);
+
+            if (_selfObject.nativeMapElement is MapIcon mapIcon)
+                mapIcon.Location = new Geopoint(
+                    new BasicGeoposition
+                    {
+                        Latitude = changedSO.Position.Latitude,
+                        Longitude = changedSO.Position.Longitude
+                    });
+            else
+                throw new Exception("ChangeSelfObject() : nativeMapElement is not a MapIcon");
         }
 
         //*********************************************************************

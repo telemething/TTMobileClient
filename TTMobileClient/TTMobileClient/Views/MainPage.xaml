@@ -81,5 +81,16 @@
             </x:Arguments>
         </NavigationPage>
 
-</TabbedPage.Children>
+        <NavigationPage Title="Settings">
+            <NavigationPage.Icon>
+                <OnPlatform x:TypeArguments="FileImageSource">
+                    <On Platform="iOS" Value="tab_about.png"/>
+                </OnPlatform>
+            </NavigationPage.Icon>
+            <x:Arguments>
+                <views:SettingsPage />
+            </x:Arguments>
+        </NavigationPage>
+
+    </TabbedPage.Children>
 </TabbedPage>

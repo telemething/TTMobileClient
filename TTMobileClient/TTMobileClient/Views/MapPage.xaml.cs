@@ -43,6 +43,7 @@ namespace TTMobileClient.Views
     public enum MissionStateEnum { Unknown, None, Sending, Sent, Starting, Underway, Failed, Completed }
     public enum LandedStateEnum { Unknown, Grounded, Liftoff, Flying, Landing, Failed }
     public enum ConnectionStateEnum { Unknown, NotConnected, Connecting, Connected, Failed, Dropped }
+    public enum MapClickModeEnum { Unknown, SetSelfPosition, SetDronePosition, AddWaypoint, Locked }
 
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class MapPage : ContentPage
@@ -54,9 +55,10 @@ namespace TTMobileClient.Views
         #region private 
 
         private int _heartbeatPeriodSeconds = 30;   //TODO : make this a config item
+        private int _selfTelemPeriodSeconds = 1;    //TODO : make this a config item
         string _udpBroadcaseIP = "192.168.1.255"; //*** TODO * Make this a config item
         int _thingTelemPort = 45679; //*** TODO * Make this a config item
-
+        private bool _sendSelfTelem = true;  //*** TODO * Make this a config item
 
         private TThingComLib.Repeater _telemetryRepeater = new TThingComLib.Repeater();
         private TThingComLib.Listener _telemetryUdpListener = null;
@@ -66,8 +68,10 @@ namespace TTMobileClient.Views
         private CustomMap _map;
         private Plugin.Geolocator.Abstractions.Position _myPosition;
         private Timer _heartbeatTimer;
+        private Timer _selfTelemTimer;
         private MissionStatus _missionStatus;
         private MissionCtrl _missionCtrl;
+        private MapClickModeEnum _mapClickMode = MapClickModeEnum.Unknown;
         // missing AzureIotLib
         //private AzureIotDevice _azureIotDevice;
 
@@ -103,6 +107,7 @@ namespace TTMobileClient.Views
         private Label _StatusAltLabel;
         private Label _StatusLandedLabel;
 
+        private StackLayout _mapStyleStack;
         private StackLayout _configStack;
         private StackLayout _planStack;
         private StackLayout _missionStack;
@@ -267,15 +272,15 @@ namespace TTMobileClient.Views
                     MapSpan.FromCenterAndRadius(
                         new Position(TestLat, TestLong), Distance.FromMiles(0.3)))
                 {
-                    IsShowingUser = true,
+                    IsShowingUser = false,
                     HeightRequest = 100,
                     WidthRequest = 960,
                     VerticalOptions = LayoutOptions.FillAndExpand,
                 };
-
+  
                 _map.OnMapClick += OnMapClick;
                 _map.OnMapReady += MapOnOnMapReady;
-                
+
                 //****************
 
 
@@ -299,13 +304,20 @@ namespace TTMobileClient.Views
 
 
                 // Map style buttons
-                var mapStyleStreetButton = new Button { Text = "Street", BackgroundColor = Color.Gray};
+                var mapStyleStreetButton = new Button { Text = "Street", BackgroundColor = Color.Gray };
                 var mapStyleHybridButton = new Button { Text = "Hybrid", BackgroundColor = Color.Gray };
                 var mapStyleSatelliteButton = new Button { Text = "Satellite", BackgroundColor = Color.Gray };
 
                 mapStyleStreetButton.Clicked += HandleClicked;
                 mapStyleHybridButton.Clicked += HandleClicked;
                 mapStyleSatelliteButton.Clicked += HandleClicked;
+
+                // Config buttons
+                var configSelfLocationButton = new Button { Text = "Set Self Location", BackgroundColor = Color.Gray };
+                var configDroneLocationButton = new Button { Text = "Set Drone Location", BackgroundColor = Color.Gray };
+
+                configSelfLocationButton.Clicked += HandleClicked;
+                configDroneLocationButton.Clicked += HandleClicked;
 
                 // Mission buttons
                 var missionConnectButton = new Button { Text = "Connect", BackgroundColor = Color.Gray };
@@ -327,7 +339,7 @@ namespace TTMobileClient.Views
                 _StatusLandedLabel = new Label { Text = "---", TextColor = Color.Red, FontSize = 20 };
 
                 // Popup stacks
-                _configStack = new StackLayout
+                _mapStyleStack = new StackLayout
                 {
                     IsVisible = false,
                     Spacing = 10,
@@ -335,6 +347,15 @@ namespace TTMobileClient.Views
                     Orientation = StackOrientation.Horizontal,
                     Children = { mapStyleStreetButton, mapStyleHybridButton,
                         mapStyleSatelliteButton }
+                };
+
+                _configStack = new StackLayout
+                {
+                    IsVisible = false,
+                    Spacing = 10,
+                    HorizontalOptions = LayoutOptions.CenterAndExpand,
+                    Orientation = StackOrientation.Horizontal,
+                    Children = { configSelfLocationButton, configDroneLocationButton }
                 };
 
                 _planStack = new StackLayout
@@ -391,24 +412,33 @@ namespace TTMobileClient.Views
                 };
                 ImageButton configButton = new ImageButton
                 {
+                    Source = "adjust.png",
+                    HorizontalOptions = LayoutOptions.End,
+                    VerticalOptions = LayoutOptions.CenterAndExpand
+                };
+                ImageButton mapStyleButton = new ImageButton
+                {
                     Source = "view.png",
                     HorizontalOptions = LayoutOptions.End,
                     VerticalOptions = LayoutOptions.CenterAndExpand
                 };
 
+
                 missionButton.Clicked += (sender, args) =>
-                { _configStack.IsVisible = false; _missionStack.IsVisible = !_missionStack.IsVisible; };
+                { _mapStyleStack.IsVisible = false; _missionStack.IsVisible = !_missionStack.IsVisible; _configStack.IsVisible = false; };
                 planButton.Clicked += (sender, args) =>
                 { /*_configStack.IsVisible = false; _missionStack.IsVisible = false;*/ _planStack.IsVisible = !_planStack.IsVisible; };
-                configButton.Clicked += (sender, args) => 
-                { _missionStack.IsVisible = false; _configStack.IsVisible = !_configStack.IsVisible; };
+                mapStyleButton.Clicked += (sender, args) => 
+                { _missionStack.IsVisible = false; _mapStyleStack.IsVisible = !_mapStyleStack.IsVisible; _configStack.IsVisible = false; };
+                configButton.Clicked += (sender, args) =>
+                { _mapStyleStack.IsVisible = false; _missionStack.IsVisible = false; _configStack.IsVisible = !_configStack.IsVisible; };
 
                 var bottomTray = new StackLayout
                 {
                     Spacing = 10,
                     HorizontalOptions = LayoutOptions.Fill,
                     Orientation = StackOrientation.Horizontal,
-                    Children = { missionButton, planButton, _MessageLabel, configButton }
+                    Children = { missionButton, planButton, _MessageLabel, mapStyleButton, configButton }
                 };
 
                 var MapPlanstack = new StackLayout { Spacing = 0, Orientation = StackOrientation.Horizontal, VerticalOptions = LayoutOptions.FillAndExpand };
@@ -417,6 +447,7 @@ namespace TTMobileClient.Views
 
                 var stack = new StackLayout { Spacing = 0 };
                 stack.Children.Add(MapPlanstack);
+                stack.Children.Add(_mapStyleStack);
                 stack.Children.Add(_configStack);
                 stack.Children.Add(_missionStack);
 
@@ -595,7 +626,64 @@ namespace TTMobileClient.Views
 
         private void OnMapClick(object sender, OnMapClickEventArgs e)
         {
-            AddWaypoint(e.Lat, e.Lon, e.Alt);
+            switch(_mapClickMode)
+            {
+                case MapClickModeEnum.AddWaypoint:
+                    AddWaypoint(e.Lat, e.Lon, e.Alt);
+                    break;
+                case MapClickModeEnum.Locked:
+                    return;
+                    break;
+                case MapClickModeEnum.SetSelfPosition:
+                    SetSelfPosition(e.Lat, e.Lon, e.Alt);
+                    _mapClickMode = MapClickModeEnum.AddWaypoint; //TODO
+                    break;
+                case MapClickModeEnum.SetDronePosition:
+                    SetDronePosition(e.Lat, e.Lon, e.Alt);
+                    _mapClickMode = MapClickModeEnum.AddWaypoint; //TODO
+                    break;
+                case MapClickModeEnum.Unknown:
+                    return;
+                    break;
+            }
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="lat"></param>
+        /// <param name="lon"></param>
+        /// <param name="alt"></param>
+        ///
+        //*********************************************************************
+
+        private async void SetSelfPosition(double lat, double lon, double alt)
+        {
+            var sensorPos = await Services.Geolocation.GetCurrentPosition();
+
+            SetSelfObject("self", lat, lon, alt, 
+                sensorPos.Latitude, sensorPos.Longitude, sensorPos.Altitude);
+
+            // recenter map
+            _map.MoveToRegion(MapSpan.FromCenterAndRadius(
+                    new Position(lat, lon), Distance.FromMiles(0.3)));
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="lat"></param>
+        /// <param name="lon"></param>
+        /// <param name="alt"></param>
+        ///
+        //*********************************************************************
+
+        private void SetDronePosition(double lat, double lon, double alt)
+        {
         }
 
         //*********************************************************************
@@ -636,7 +724,7 @@ namespace TTMobileClient.Views
         ///
         //*********************************************************************
 
-        private TrackedObject AddTrackedObject(string uniqueId, 
+        private TrackedObject AddTrackedObject(string uniqueId,
             double lat, double lon, double alt)
         {
             TrackedObject to = new TrackedObject()
@@ -660,6 +748,41 @@ namespace TTMobileClient.Views
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="uniqueId"></param>
+        /// <param name="lat"></param>
+        /// <param name="lon"></param>
+        /// <param name="alt"></param>
+        /// <returns></returns>
+        ///
+        //*********************************************************************
+
+        private SelfObject SetSelfObject(string uniqueId,
+            double lat, double lon, double alt, 
+            double sensorlat, double sensorlon, double sensorAlt)
+        {
+            SelfObject to = new SelfObject()
+            {
+                Type = PinType.Generic,
+                Position = new Position(lat, lon),
+                Label = "Self",
+                Address = $"Lat: {lat}, Lon: {lon}, alt: {alt}",
+                Id = "Self",
+                Url = "http://www.telemething.com/",
+                UniqueId = uniqueId,
+                PositionFromSensor = new Position(sensorlat, sensorlon),
+                PositionOffset = new Position(sensorlat - lat, sensorlon - lon)            
+            };
+
+            _map.SetSelfObject(to);
+
+            return to;
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         ///
@@ -668,7 +791,7 @@ namespace TTMobileClient.Views
         void HandleClicked(object sender, EventArgs e)
         {
             _missionStack.IsVisible = false;
-            _configStack.IsVisible = false;
+            _mapStyleStack.IsVisible = false;
 
             var b = sender as Button;
             switch (b.Text)
@@ -697,6 +820,12 @@ namespace TTMobileClient.Views
                 case "Clear Mission":
                     Xamarin.Forms.Device.BeginInvokeOnMainThread(ClearMission);
                     break;
+                case "Set Self Location":
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(SetSelfLocation);
+                    break;
+                case "Set Drone Location":
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(SetDroneLocation);
+                    break;
             }
         }
 
@@ -715,6 +844,10 @@ namespace TTMobileClient.Views
             try
             {
                 pos = await Services.Geolocation.GetCurrentPosition();
+
+                SetSelfObject("self", 
+                    pos.Latitude, pos.Longitude, pos.Altitude, 
+                    pos.Latitude, pos.Longitude, pos.Altitude);
 
                 _map.MoveToRegion(MapSpan.FromCenterAndRadius(
                     new Position(pos.Latitude, pos.Longitude), Distance.FromMiles(0.3)));
@@ -799,15 +932,40 @@ namespace TTMobileClient.Views
             _heartbeatTimer = new Timer(HeartbeatTimerCallback, obj, 
                 new TimeSpan(0, 0, 0, 0), 
                 new TimeSpan(0, 0, 0, _heartbeatPeriodSeconds));
+
+            if (_sendSelfTelem)
+            {
+                _selfTelemTimer = new Timer(SelfTelemTimerCallback, obj,
+                    new TimeSpan(0, 0, 0, 0),
+                    new TimeSpan(0, 0, 0, _selfTelemPeriodSeconds));
+            }
         }
 
         //*********************************************************************
-        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        //*********************************************************************
+
+        private Plugin.Geolocator.Abstractions.Position FetchAdjustedSelfPosition()
+        {
+            var position = Services.Geolocation.GetCurrentPosition().Result;
+
+            if (null != _map) if (null != _map.SelfObject)
+            if (null != _map.SelfObject.PositionOffset)
+            {
+                position.Latitude += _map.SelfObject.PositionOffset.Latitude;
+                position.Longitude += _map.SelfObject.PositionOffset.Longitude;
+            }
+
+            return position;
+        }
+
+        //*********************************************************************
         /// <summary>
         /// 
         /// </summary>
         /// <param name="state"></param>
-        ///
         //*********************************************************************
 
         private void HeartbeatTimerCallback(object state)
@@ -815,7 +973,7 @@ namespace TTMobileClient.Views
             double lat = 0, lon = 0;
             try
             {
-                _myPosition = Services.Geolocation.GetCurrentPosition().Result;
+                _myPosition = FetchAdjustedSelfPosition();
                 lat = _myPosition.Latitude;
                 lon = _myPosition.Longitude;
             }
@@ -832,6 +990,34 @@ namespace TTMobileClient.Views
                 }
                 else
                     return;
+            }
+
+            //SendPositionUpdate(lat, lon);
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="state"></param>
+        //*********************************************************************
+
+        private void SelfTelemTimerCallback(object state)
+        {
+            try
+            {
+                _myPosition = FetchAdjustedSelfPosition();
+
+                _telemetryRepeater?.Send(new TThingComLib.Messages.Message(
+                    MessageTypeEnum.Telem, "self", "*")
+                {
+                    Coord = new Coord(_myPosition.Latitude,
+                    _myPosition.Longitude, _myPosition.Altitude)
+                }, false);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
             }
 
             //SendPositionUpdate(lat, lon);
@@ -1003,6 +1189,32 @@ namespace TTMobileClient.Views
         ///
         //*********************************************************************
 
+        private async void SetSelfLocation()
+        {
+            _mapClickMode = MapClickModeEnum.SetSelfPosition;
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        ///
+        //*********************************************************************
+
+        private async void SetDroneLocation()
+        {
+            _mapClickMode = MapClickModeEnum.SetDronePosition;
+        }
+
+        //*********************************************************************
+        ///
+        /// <summary>
+        /// 
+        /// </summary>
+        ///
+        //*********************************************************************
+
         private async void EndMission()
         {
             //this.MissionState = MissionStateEnum.Underway;
@@ -1112,7 +1324,7 @@ namespace TTMobileClient.Views
             Xamarin.Forms.Device.BeginInvokeOnMainThread(
                 () =>
                 {
-                    _telemetryRepeater.Send(missionStatus);
+                    _telemetryRepeater.Send(missionStatus, true);
                     _StatusLatLabel.Text = $"Lat: {missionStatus.x_lat}";
                     _StatusLongLabel.Text = $"Lon: {missionStatus.y_long}";
                     _StatusAltLabel.Text = $"Alt: {Math.Round(missionStatus.z_alt, 2)}";
