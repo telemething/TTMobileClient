@@ -54,10 +54,11 @@ namespace TTMobileClient.Views
 
         #region private 
 
-        private int _heartbeatPeriodSeconds = 30;   //TODO : make this a config item
-        private int _selfTelemPeriodSeconds = 1;    //TODO : make this a config item
-        string _udpBroadcaseIP = "192.168.1.255"; //*** TODO * Make this a config item
-        int _thingTelemPort = 45679; //*** TODO * Make this a config item
+        private int _heartbeatPeriodSeconds = AppSettings.HeartbeatPeriodSeconds;
+        private int _selfTelemPeriodSeconds = AppSettings.SelfTelemPeriodSeconds;
+        string _udpBroadcastIP = AppSettings.UdpBroadcastIP;
+        int _thingTelemPort = AppSettings.ThingTelemPort; 
+
         private bool _sendSelfTelem = true;  //*** TODO * Make this a config item
 
         private TThingComLib.Repeater _telemetryRepeater = new TThingComLib.Repeater();
@@ -153,8 +154,8 @@ namespace TTMobileClient.Views
 
             base.OnAppearing();
             ShowMap();
-            StartRepeater(); //*** TODO * We don't always want to runt this, make it a config item
-            StartListener(); //*** TODO * We don't always want to runt this, make it a config item
+            StartRepeater(); //*** TODO * We don't always want to run this, make it a config item
+            StartListener(); //*** TODO * We don't always want to run this, make it a config item
 
             //Xamarin.Forms.Device.BeginInvokeOnMainThread(ConnectToIotHub);
             //Xamarin.Forms.Device.BeginInvokeOnMainThread(StartTelemetry);
@@ -240,7 +241,7 @@ namespace TTMobileClient.Views
                 _telemetryRepeater.AddTransport(
                     TThingComLib.Repeater.TransportEnum.UDP,
                     TThingComLib.Repeater.DialectEnum.ThingTelem, 
-                    _udpBroadcaseIP, _thingTelemPort, 500);
+                    _udpBroadcastIP, _thingTelemPort, 500);
             }
             catch (Exception ex)
             {
@@ -514,88 +515,6 @@ namespace TTMobileClient.Views
         {
             Xamarin.Forms.Device.BeginInvokeOnMainThread(ShowCurrentPositionOnMap);
         }
-
-        /*private async Task<bool> ShowMapy()
-        {
-            if (!await GetPermissions(new List<Permission>()
-                { Permission.Location, Permission.LocationWhenInUse }))
-                return false;
-
-            try
-            {
-                // create map
-                _map = new CustomMap(
-                    MapSpan.FromCenterAndRadius(
-                        new Position(47.6062, -122.3321), Distance.FromMiles(0.3)))
-                {
-                    IsShowingUser = true,
-                    HeightRequest = 100,
-                    WidthRequest = 960,
-                    VerticalOptions = LayoutOptions.FillAndExpand,
-                };
-
-                _map.OnMapClick += OnMapClick;
-
-                //BuildCustomPins();
-
-                // create map style buttons
-                var street = new Button { Text = "Street" };
-                var hybrid = new Button { Text = "Hybrid" };
-                var satellite = new Button { Text = "Satellite" };
-                var connect = new Button { Text = "Connect" };
-                var sendMission = new Button { Text = "sendMission" };
-                var StartMission = new Button { Text = "StartMission" };
-
-                street.Clicked += HandleClicked;
-                hybrid.Clicked += HandleClicked;
-                satellite.Clicked += HandleClicked;
-                connect.Clicked += HandleClicked;
-                sendMission.Clicked += HandleClicked;
-                StartMission.Clicked += HandleClicked;
-
-                //var PositionLabel = new Label { Text = "This is a green label.", TextColor = Color.FromHex("#77d065"), FontSize = 20 };
-                _StatusLatLabel = new Label { Text = "---" };
-                _StatusLongLabel = new Label { Text = "---" };
-                _StatusAltLabel = new Label { Text = "---" };
-                _StatusLandedLabel = new Label { Text = "---" };
-
-                var buttons = new StackLayout
-                {
-                    Spacing = 10,
-                    HorizontalOptions = LayoutOptions.CenterAndExpand,
-                    Orientation = StackOrientation.Horizontal,
-                    Children = { street, hybrid, satellite, connect, sendMission, StartMission }
-                };
-
-                var telem = new StackLayout
-                {
-                    Spacing = 10,
-                    HorizontalOptions = LayoutOptions.CenterAndExpand,
-                    Orientation = StackOrientation.Horizontal,
-                    Children = { _StatusLandedLabel, _StatusLatLabel, _StatusLongLabel, _StatusAltLabel }
-                };
-
-                var stack = new StackLayout { Spacing = 0 };
-                stack.Children.Add(_map);
-                stack.Children.Add(buttons);
-                stack.Children.Add(telem);
-                Content = stack;
-
-                //ShowCurrentPositionOnMap();
-
-                //TestDropCustomPin();
-
-                //TestDrawPolyline();
-
-                return true;
-            }
-            catch (System.Exception ex)
-            {
-                //logger.DebugLogError("Fatal Error on permissions: " + ex.Message);
-                await App.Current.MainPage.DisplayAlert("Error", "Error: " + ex.Message, "Ok");
-                return false;
-            }
-        }*/
 
         //*********************************************************************
         ///
@@ -1182,11 +1101,9 @@ namespace TTMobileClient.Views
         }
 
         //*********************************************************************
-        ///
         /// <summary>
         /// 
         /// </summary>
-        ///
         //*********************************************************************
 
         private async void SetSelfLocation()
@@ -1195,11 +1112,9 @@ namespace TTMobileClient.Views
         }
 
         //*********************************************************************
-        ///
         /// <summary>
         /// 
         /// </summary>
-        ///
         //*********************************************************************
 
         private async void SetDroneLocation()
@@ -1221,11 +1136,9 @@ namespace TTMobileClient.Views
         }
 
         //*********************************************************************
-        ///
         /// <summary>
         /// 
         /// </summary>
-        ///
         //*********************************************************************
 
         private async void ClearMission()
@@ -1243,11 +1156,9 @@ namespace TTMobileClient.Views
         }
 
         //*********************************************************************
-        ///
         /// <summary>
         /// 
         /// </summary>
-        ///
         //*********************************************************************
 
         private async void StartTelemetry()
@@ -1268,12 +1179,10 @@ namespace TTMobileClient.Views
         }
 
         //*********************************************************************
-        ///
         /// <summary>
         /// 
         /// </summary>
         /// <param name="lsIn"></param>
-        ///
         //*********************************************************************
 
         private void SetLandedState(string lsIn)
@@ -1307,12 +1216,10 @@ namespace TTMobileClient.Views
         }
 
         //*********************************************************************
-        ///
         /// <summary>
         /// 
         /// </summary>
         /// <param name="missionStatus"></param>
-        /// 
         //*********************************************************************
 
         private void TelemetrySubscriptionHandler(MissionStatus missionStatus)
@@ -1337,13 +1244,11 @@ namespace TTMobileClient.Views
         }
 
         //*********************************************************************
-        ///
         /// <summary>
         /// 
         /// </summary>
         /// <param name="lat"></param>
         /// <param name="lon"></param>
-        ///
         //*********************************************************************
 
         public async void SendPositionUpdate(double lat, double lon)
@@ -1355,14 +1260,12 @@ namespace TTMobileClient.Views
         }
 
         //*********************************************************************
-        ///
         /// <summary>
         /// 
         /// </summary>
         /// <param name="lat"></param>
         /// <param name="lon"></param>
         /// <param name="minDelta"></param>
-        ///
         //*********************************************************************
 
         private void ShowTrackedObjectLocation(double lat, double lon, double minDelta)

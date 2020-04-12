@@ -48,6 +48,7 @@
             </x:Arguments>
         </NavigationPage>
 
+        <!-- 20200411: Urho breaks start-up after some Android updates
         <NavigationPage Title="UrhoTest">
             <NavigationPage.Icon>
                 <OnPlatform x:TypeArguments="FileImageSource">
@@ -57,7 +58,7 @@
             <x:Arguments>
                 <views:UrhoTest />
             </x:Arguments>
-        </NavigationPage>
+        </NavigationPage>-->
 
         <NavigationPage Title="Video">
             <NavigationPage.Icon>

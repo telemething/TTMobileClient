@@ -16,6 +16,12 @@ namespace TTMobileClient
         public static string AzureBackendUrl = "http://localhost:5000";
         public static bool UseMockDataStore = true;
 
+        //*********************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        //*********************************************************************
+
         public App()
         {
             InitializeComponent();
@@ -25,26 +31,36 @@ namespace TTMobileClient
             else
                 DependencyService.Register<AzureDataStore>();
 
-            /*System.Threading.Tasks.Task.Factory.StartNew(async () =>
-            {
-                using (var server = new WebServer(HttpListenerMode.EmbedIO, "http://*:8080"))
-                {
-                    System.Reflection.Assembly assembly = typeof(App).Assembly;
-                    server.WithLocalSessionManager();
-                    server.WithWebApi("/api", m => m.WithController(() => new TestController()));
-                    server.WithEmbeddedResources("/", assembly, "EmbedIO.Forms.Sample.html");
-                    await server.RunAsync();
-                }
-            });*/
+            MainPage = new MainPage();
 
+            StartServices();
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        //*********************************************************************
+
+        protected void StartServices()
+        {
+            //start web server
             WebServerLib.TTWebServer TS = new WebServerLib.TTWebServer();
             TS.StartServer();
 
-            WebServerLib.TileClient TC = new WebServerLib.TileClient();
-            TC.Test();
+            //web server client test
+            //WebServerLib.TileClient TC = new WebServerLib.TileClient();
+            //TC.Test();
 
-            MainPage = new MainPage();
+            AdvertiseServices AS = new AdvertiseServices();
+            AS.StartAdvertising();
         }
+
+        //*********************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        //*********************************************************************
 
         protected override void OnStart()
         {
@@ -54,10 +70,22 @@ namespace TTMobileClient
                   typeof(Analytics), typeof(Crashes));
         }
 
+        //*********************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        //*********************************************************************
+
         protected override void OnSleep()
         {
             // Handle when your app sleeps
         }
+
+        //*********************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        //*********************************************************************
 
         protected override void OnResume()
         {

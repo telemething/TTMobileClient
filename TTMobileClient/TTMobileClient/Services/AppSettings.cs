@@ -15,6 +15,15 @@ namespace TTMobileClient
         private static double _defaultGeoCoordsLat = 47.6062;
         private static double _defaultGeoCoordsLon = -122.3321;
 
+        public static int ServiceAdvertisePeriodSeconds { get; } = 1;    
+        public static string UdpBroadcastIP { get; } = "192.168.1.255"; 
+        public static int ThingTelemPort { get; } = 45679; 
+        public static string AddressPrefix { get; } = "192.168.1";
+
+        public static int HeartbeatPeriodSeconds { get; } = 30;   
+        public static int SelfTelemPeriodSeconds { get; } = 1;    
+
+
         public static string DefaultRobotRosbridgeUrl
         {
             get { return _defaultRobotRosbridgeUrl; }
