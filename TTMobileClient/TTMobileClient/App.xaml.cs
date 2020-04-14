@@ -16,6 +16,12 @@ namespace TTMobileClient
         public static string AzureBackendUrl = "http://localhost:5000";
         public static bool UseMockDataStore = true;
 
+        WebServerLib.TTWebSocketServer WSS = null;
+        WebServerLib.TTWebServer TS = null;
+        WebServerLib.TileClient TC = null;
+        WebServerLib.TTWebSocketClient sc;
+        WebApiLib.WebApiClient wac = null;
+
         //*********************************************************************
         /// <summary>
         /// 
@@ -44,16 +50,32 @@ namespace TTMobileClient
 
         protected void StartServices()
         {
+            WSS = new WebServerLib.TTWebSocketServer();
+            WSS.StartServer();
+
+            //wac = new WebApiLib.WebApiClient();
+            //wac.Connect("ws://localhost:8877/chat");
+            //InvokeTest();
+
+            //sc = new WebServerLib.TTWebSocketClient();
+            //sc.Connect();
+            //sc.Send("hi");
+
             //start web server
-            WebServerLib.TTWebServer TS = new WebServerLib.TTWebServer();
-            TS.StartServer();
+            //TS = new WebServerLib.TTWebServer();
+            //TS.StartServer();
 
             //web server client test
-            //WebServerLib.TileClient TC = new WebServerLib.TileClient();
+            //TC = new WebServerLib.TileClient();
             //TC.Test();
 
             AdvertiseServices AS = new AdvertiseServices();
             AS.StartAdvertising();
+        }
+
+        private async void InvokeTest()
+        {
+            var resp = await wac.Invoke("method1", new System.Collections.Generic.List<WebApiLib.Argument>());
         }
 
         //*********************************************************************

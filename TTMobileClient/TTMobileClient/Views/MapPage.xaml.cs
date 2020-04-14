@@ -163,6 +163,8 @@ namespace TTMobileClient.Views
             StartHeartbeatTimer();
         }
 
+        WebApiLib.WebApiClient wac;
+
         //*********************************************************************
         /// <summary>
         /// 
@@ -175,6 +177,10 @@ namespace TTMobileClient.Views
             {
                 _telemetryUdpListener = new Listener(45679, GotMessageCallback);
                 _telemetryUdpListener.Connect();
+
+            wac = new WebApiLib.WebApiClient();
+            wac.Connect("ws://localhost:8877/chat");
+
                 return true;
             }
             catch (Exception ex)
@@ -837,6 +843,8 @@ namespace TTMobileClient.Views
             return permissionsGranted;
         }
 
+        Timer _wsApiTestTimer;
+
         //*********************************************************************
         ///
         /// <summary>
@@ -848,9 +856,13 @@ namespace TTMobileClient.Views
         private void StartHeartbeatTimer()
         {
             object obj = null;
-            _heartbeatTimer = new Timer(HeartbeatTimerCallback, obj, 
-                new TimeSpan(0, 0, 0, 0), 
+            _heartbeatTimer = new Timer(HeartbeatTimerCallback, obj,
+                new TimeSpan(0, 0, 0, 0),
                 new TimeSpan(0, 0, 0, _heartbeatPeriodSeconds));
+
+            _wsApiTestTimer = new Timer(WsApiTestTimerCallback, obj,
+                new TimeSpan(0, 0, 0, 10),
+                new TimeSpan(0, 0, 0, 10));
 
             if (_sendSelfTelem)
             {
@@ -912,6 +924,18 @@ namespace TTMobileClient.Views
             }
 
             //SendPositionUpdate(lat, lon);
+        }
+
+        private async void WsApiTestTimerCallback(object state)
+        {
+            try
+            {
+                var resp = await wac.Invoke("method1", new System.Collections.Generic.List<WebApiLib.Argument>());
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         //*********************************************************************
