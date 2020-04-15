@@ -7,6 +7,8 @@ namespace TTMobileClient.Services
 {
     public class Geolocation
     {
+        private static bool _verbose = false;
+
         public static bool IsLocationAvailable()
         {
             if (!CrossGeolocator.IsSupported)
@@ -49,11 +51,14 @@ namespace TTMobileClient.Services
             if (position == null)
                 return null;
 
-            var output = string.Format("Time: {0} \nLat: {1} \nLong: {2} \nAltitude: {3} \nAltitude Accuracy: {4} \nAccuracy: {5} \nHeading: {6} \nSpeed: {7}",
-                position.Timestamp, position.Latitude, position.Longitude,
-                position.Altitude, position.AltitudeAccuracy, position.Accuracy, position.Heading, position.Speed);
+            if (_verbose)
+            {
+                var output = string.Format("Time: {0} \nLat: {1} \nLong: {2} \nAltitude: {3} \nAltitude Accuracy: {4} \nAccuracy: {5} \nHeading: {6} \nSpeed: {7}",
+                    position.Timestamp, position.Latitude, position.Longitude,
+                    position.Altitude, position.AltitudeAccuracy, position.Accuracy, position.Heading, position.Speed);
 
-            Debug.WriteLine(output);
+                Debug.WriteLine(output);
+            }
 
             return position;
         }

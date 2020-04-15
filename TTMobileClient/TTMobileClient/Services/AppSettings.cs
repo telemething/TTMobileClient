@@ -21,8 +21,8 @@ namespace TTMobileClient
         public static string AddressPrefix { get; } = "192.168.1";
 
         public static int HeartbeatPeriodSeconds { get; } = 30;   
-        public static int SelfTelemPeriodSeconds { get; } = 1;    
-
+        public static int SelfTelemPeriodSeconds { get; } = 1;
+        public static string WebApiUrl { get; } = "http://*:8877";
 
         public static string DefaultRobotRosbridgeUrl
         {

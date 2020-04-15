@@ -179,7 +179,7 @@ namespace TTMobileClient.Views
                 _telemetryUdpListener.Connect();
 
             wac = new WebApiLib.WebApiClient();
-            wac.Connect("ws://localhost:8877/chat");
+            wac.Connect("ws://localhost:8877/wsapi");
 
                 return true;
             }
@@ -926,15 +926,47 @@ namespace TTMobileClient.Views
             //SendPositionUpdate(lat, lon);
         }
 
+        //*********************************************************************
+        /// <summary>
+        /// Test method, not for production
+        /// </summary>
+        /// <param name="state"></param>
+        //*********************************************************************
+
         private async void WsApiTestTimerCallback(object state)
         {
+            Guid reqGuid = new Guid();
+            Guid respGuid = new Guid();
+
             try
             {
-                var resp = await wac.Invoke("method1", new System.Collections.Generic.List<WebApiLib.Argument>());
+                var req = new WebApiLib.Request("method1", new System.Collections.Generic.List<WebApiLib.Argument>());
+
+                reqGuid = req.GUID;
+
+                var resp = await wac.Invoke(req);
+
+                //var resp = await wac.Invoke("method1", new System.Collections.Generic.List<WebApiLib.Argument>());
+
+                if (resp.Result != WebApiLib.ResultEnum.ok)
+                {
+                    if (resp.Result == WebApiLib.ResultEnum.exception)
+                        throw new Exception("Test Failed : " + resp.Exception?.Message);
+                    if (resp.Result == WebApiLib.ResultEnum.notfound)
+                        throw new Exception("Test Failed : not found");
+                    if (resp.Result == WebApiLib.ResultEnum.timeout)
+                        throw new Exception("Test Failed : timeout");
+                    if (resp.Result == WebApiLib.ResultEnum.unknown)
+                        throw new Exception("Test Failed : unknown");
+                }
+
+                respGuid = resp.RequestGUID;
+
+                Debug.WriteLine("WsApiTestTimerCallback() : Req: " + reqGuid.ToString() + " Resp: " + respGuid.ToString());
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Debug.WriteLine("WsApiTestTimerCallback() : Req: " + reqGuid.ToString() + " Exception : " + e.Message);
             }
         }
 
