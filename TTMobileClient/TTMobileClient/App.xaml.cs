@@ -16,9 +16,8 @@ namespace TTMobileClient
         public static string AzureBackendUrl = "http://localhost:5000";
         public static bool UseMockDataStore = true;
 
-        WebApiLib.WebApiServer _was = null;
+        TTMobileClient.Services.ApiService _was = null;
         AdvertiseServices _as = null;
-        string _webApiUrl = AppSettings.WebApiUrl;
 
         //*********************************************************************
         /// <summary>
@@ -48,8 +47,8 @@ namespace TTMobileClient
 
         protected void StartServices()
         {
-            _was = new WebApiLib.WebApiServer();
-            _was.StartServer(_webApiUrl);
+            _was = new TTMobileClient.Services.ApiService();
+            _was.StartService();
 
             _as = new AdvertiseServices();
             _as.StartAdvertising();
