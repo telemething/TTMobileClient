@@ -940,7 +940,7 @@ namespace TTMobileClient.Views
 
             try
             {
-                var req = new WebApiLib.Request("method1", new System.Collections.Generic.List<WebApiLib.Argument>());
+                var req = new WebApiLib.Request("Test1", new System.Collections.Generic.List<WebApiLib.Argument>());
 
                 reqGuid = req.GUID;
 
