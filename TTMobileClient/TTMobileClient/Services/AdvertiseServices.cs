@@ -104,8 +104,8 @@ namespace TTMobileClient
         {
             var serviceList = new List<TThingComLib.Messages.NetworkService>();
 
-            serviceList.Add(new NetworkService($"http://{_address}:8080/config",
-                NetworkTypeEnum.UDP, ServiceTypeEnum.Config, ServiceRoleEnum.Server));
+            serviceList.Add(new NetworkService($"ws://{_address}:8877/wsapi",
+                NetworkTypeEnum.WsAPI, ServiceTypeEnum.Config, ServiceRoleEnum.Server));
 
             serviceList.Add(new NetworkService($"http://{_address}:8080/tiles",
                 NetworkTypeEnum.UDP, ServiceTypeEnum.GeoTile, ServiceRoleEnum.Server));
@@ -128,7 +128,7 @@ namespace TTMobileClient
             try
             {
                 _telemetryRepeater?.Send(new TThingComLib.Messages.Message(
-                    TThingComLib.Messages.MessageTypeEnum.Telem, "GroundStation", "*")
+                    TThingComLib.Messages.MessageTypeEnum.Config, "GroundStation", "*")
                 {
                     NetworkServices = BuildServiceList()
                 }, false); 

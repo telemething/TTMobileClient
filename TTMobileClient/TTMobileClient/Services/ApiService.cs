@@ -11,8 +11,11 @@ namespace TTMobileClient.Services
     //*************************************************************************
     public class ApiService
     {
-        //signature of rerquest handling methods
+        //signature of request handling methods
         public delegate List<WebApiLib.Argument> MethodCallback(List<WebApiLib.Argument> args);
+
+        //signature of event handling methods
+        public delegate void EventCallback(WebApiLib.ApiEvent apiEvent);
 
         //list of request handling methods
         Dictionary<string, MethodCallback> _methodList = new Dictionary<string, MethodCallback>();
@@ -33,7 +36,7 @@ namespace TTMobileClient.Services
             CreateTestApiMethods();
 
             _was = new WebApiLib.WebApiServer();
-            _was.StartServer(_webApiUrl, GotMessageCallback);
+            _was.StartServer(_webApiUrl, GotMessageCallback, GotEventCallback);
         }
 
         //*************************************************************************
@@ -52,9 +55,40 @@ namespace TTMobileClient.Services
 
                 return new WebApiLib.Response(WebApiLib.ResultEnum.ok, method.Invoke(req.Arguments), null);
             }
-            catch( Exception ex)
+            catch (Exception ex)
             {
                 return new WebApiLib.Response(WebApiLib.ResultEnum.exception, null, ex);
+            }
+        }
+
+        //*************************************************************************
+        /// <summary>
+        /// Called by the WebApi server when an event occurs
+        /// </summary>
+        /// <param name="apiEvent"></param>
+        /// <returns></returns>
+        //*************************************************************************
+        private void GotEventCallback(WebApiLib.ApiEvent apiEvent)
+        {
+            try
+            {
+                switch(apiEvent.EventType)
+                {
+                    case WebApiLib.ApiEvent.EventTypeEnum.connect:
+                        Xamarin.Forms.Device.BeginInvokeOnMainThread(
+                            () => App.Current.MainPage.DisplayAlert(
+                                "Connection", "API Client Connected", "Ok"));
+                        break;
+
+                    case WebApiLib.ApiEvent.EventTypeEnum.disconnect:
+                        Xamarin.Forms.Device.BeginInvokeOnMainThread(
+                            () => App.Current.MainPage.DisplayAlert(
+                                "Disconnection", "API Client Disconnected", "Ok"));
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
             }
         }
 

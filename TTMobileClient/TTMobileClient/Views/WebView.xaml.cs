@@ -13,6 +13,8 @@ namespace TTMobileClient.Views
         private ConnectionStateEnum _connectionState = ConnectionStateEnum.Unknown;
         string RosBridgeUrl = AppSettings.DefaultRobotRosbridgeUrl;
         string RosVideoUrl = AppSettings.DefaultRobotRosVideoUrl;
+        bool _envelope = true;
+        bool _connectOnOpen = false;
 
         const string EnvelopeString =
             "<html><head></head><body><img src=\"{0}\"></img></body></html>";
@@ -77,13 +79,14 @@ namespace TTMobileClient.Views
 
         protected override void OnAppearing()
         {
-            bool envelope = true;
+            if (_connectOnOpen)
+            {
+                UpdateTopicList();
 
-            UpdateTopicList();
-
-            DisplayImageStream(envelope ?
-                "http://192.168.1.30:8080/stream?topic=/airsim/image_raw" :
-                "http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4", envelope);
+                DisplayImageStream(_envelope ?
+                    "http://192.168.1.30:8080/stream?topic=/airsim/image_raw" :
+                    "http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4", _envelope);
+            }
         }
 
         //*********************************************************************
