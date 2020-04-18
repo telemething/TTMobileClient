@@ -20,9 +20,23 @@ namespace TTMobileClient.Views
         {
             InitializeComponent();
 
-            _portableAppSettings = PortableAppSettings.GetTestData();
+            //_portableAppSettings = PortableAppSettings.GetTestData();
 
-            CreateSettingsTable();
+            //CreateSettingsTable();
+        }
+
+        protected override void OnAppearing()
+        {
+            //_portableAppSettings = PortableAppSettings.GetTestData();
+
+            if (0 < AppSettings.App.RemoteAppSettings.Count)
+            {
+                //for now just take the first one, it's probably all we will ever need
+                _portableAppSettings = AppSettings.App.RemoteAppSettings[0];
+                CreateSettingsTable();
+            }
+
+            base.OnAppearing();
         }
 
         ///********************************************************************

@@ -17,6 +17,7 @@ namespace TTMobileClient
         public static bool UseMockDataStore = true;
 
         TTMobileClient.Services.ApiService _was = null;
+        TTMobileClient.AppSettings _appSettings = null;
         AdvertiseServices _as = null;
 
         //*********************************************************************
@@ -47,9 +48,16 @@ namespace TTMobileClient
 
         protected void StartServices()
         {
+            //we start the API service, listening for requets from remote devices
             _was = new TTMobileClient.Services.ApiService();
             _was.StartService();
 
+            //we start the AppSettings here so that it registers a callback with
+            //the API service, listening for requests from remote devices
+            _appSettings = new AppSettings();
+
+            //we start the advertising service, informing remote devices of the
+            //services we offer
             _as = new AdvertiseServices();
             _as.StartAdvertising();
         }

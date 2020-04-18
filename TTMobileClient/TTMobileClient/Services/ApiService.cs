@@ -6,11 +6,25 @@ namespace TTMobileClient.Services
 {
     //*************************************************************************
     /// <summary>
+    /// A collection of app specific WebApi method names
+    /// </summary>
+    //*************************************************************************
+    public class WebApiMethodNames
+    {
+        public static string Settings_RegisterRemoteSettings { get; } = 
+            "Settings.RegisterRemoteSettings";
+    }
+
+    //*************************************************************************
+    /// <summary>
     /// 
     /// </summary>
     //*************************************************************************
     public class ApiService
     {
+        //private static ApiService _apiService = new ApiService();
+        private static ApiService _apiService = null;
+
         //signature of request handling methods
         public delegate List<WebApiLib.Argument> MethodCallback(List<WebApiLib.Argument> args);
 
@@ -25,6 +39,20 @@ namespace TTMobileClient.Services
         
         //The URLof the WebApi Server
         string _webApiUrl = AppSettings.WebApiUrl;
+
+        /// Fetch the singleton
+        public static ApiService Singleton => _apiService;
+
+        //*************************************************************************
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        //*************************************************************************
+        public ApiService()
+        {
+            //I dont like this, but something weird is going on
+            _apiService = this;
+        }
 
         //*************************************************************************
         /// <summary>

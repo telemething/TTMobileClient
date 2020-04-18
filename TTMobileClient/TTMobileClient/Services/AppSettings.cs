@@ -1,13 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Text;
-using Xamarin.Forms;
+using TTMobileClient.Services;
 
 namespace TTMobileClient
-{
+{  
+    //*************************************************************************
+    /// <summary>
+    /// App settings
+    /// </summary>
+    //*************************************************************************
     public class AppSettings
     {
+        //list of settings from/for remote devices
+        private List<PortableAppSettings> _remoteAppSettings =
+            new List<PortableAppSettings>();
+
+        //The API service, which forwards settings requests from remote devices
+        TTMobileClient.Services.ApiService _was = null;
+
+        //private static AppSettings _appSettings = new AppSettings();
+        private static AppSettings _appSettings = null;
+
         //private static string _defaultRobotRosbridgeUrl = "ws://theflyingzephyr.ddns.net:9090";
         //private static string _defaultRobotRosbridgeUrl = "ws://192.168.1.30:9090";
         private static string _defaultRobotRosbridgeUrl = "ws://192.168.1.38:9090";
@@ -42,6 +56,44 @@ namespace TTMobileClient
         public static double DefaultGeoCoordsLon
         {
             get { return _defaultGeoCoordsLon; }
+        }
+
+        public List<PortableAppSettings> RemoteAppSettings
+        {
+            get { return _remoteAppSettings; }
+        }
+
+        public static AppSettings App => _appSettings;
+
+        //*************************************************************************
+        /// <summary>
+        /// Constructor, register a callback with the API service
+        /// </summary>
+        //*************************************************************************
+        public AppSettings()
+        {
+            _appSettings = this;
+            //register api handler with the ApiService
+            _was = TTMobileClient.Services.ApiService.Singleton;
+            _was.AddApiMethod(WebApiMethodNames.Settings_RegisterRemoteSettings, 
+                SettingsRegisterRemoteSettings);
+        }
+
+        //*************************************************************************
+        /// <summary>
+        /// SettingsMySettings
+        /// </summary>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        //*************************************************************************
+        List<WebApiLib.Argument> SettingsRegisterRemoteSettings(List<WebApiLib.Argument> args)
+        {
+            if (!(args[0].Value is String appSettingsString))
+                throw new ArgumentException("args[0].Value not encoded as string");
+
+            _remoteAppSettings.Add(PortableAppSettings.Deserialize(appSettingsString));
+
+            return new List<WebApiLib.Argument>();
         }
     }
 
@@ -102,6 +154,14 @@ namespace TTMobileClient
         public object Description => _description;
         public List<AppSetting> AppSettings => _appSettings;
 
+        //*********************************************************************
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="description"></param>
+        /// <param name="appSettings"></param>
+        //*********************************************************************
         public AppSettingCollection(string name, string description, List<AppSetting> appSettings)
         {
             _name = name;

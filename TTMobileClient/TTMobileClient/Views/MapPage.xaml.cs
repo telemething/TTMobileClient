@@ -60,6 +60,7 @@ namespace TTMobileClient.Views
         int _thingTelemPort = AppSettings.ThingTelemPort; 
 
         private bool _sendSelfTelem = true;  //*** TODO * Make this a config item
+        private bool _runWacLoopbackTest = false;
 
         private TThingComLib.Repeater _telemetryRepeater = new TThingComLib.Repeater();
         private TThingComLib.Listener _telemetryUdpListener = null;
@@ -178,8 +179,11 @@ namespace TTMobileClient.Views
                 _telemetryUdpListener = new Listener(45679, GotMessageCallback);
                 _telemetryUdpListener.Connect();
 
-            wac = new WebApiLib.WebApiClient();
-            wac.Connect("ws://localhost:8877/wsapi");
+                if (_runWacLoopbackTest)
+                {
+                    wac = new WebApiLib.WebApiClient();
+                    wac.Connect("ws://localhost:8877/wsapi");
+                }
 
                 return true;
             }
@@ -860,9 +864,12 @@ namespace TTMobileClient.Views
                 new TimeSpan(0, 0, 0, 0),
                 new TimeSpan(0, 0, 0, _heartbeatPeriodSeconds));
 
-            _wsApiTestTimer = new Timer(WsApiTestTimerCallback, obj,
-                new TimeSpan(0, 0, 0, 10),
-                new TimeSpan(0, 0, 0, 10));
+            if (_runWacLoopbackTest)
+            {
+                _wsApiTestTimer = new Timer(WsApiTestTimerCallback, obj,
+                    new TimeSpan(0, 0, 0, 10),
+                    new TimeSpan(0, 0, 0, 10));
+            }
 
             if (_sendSelfTelem)
             {
