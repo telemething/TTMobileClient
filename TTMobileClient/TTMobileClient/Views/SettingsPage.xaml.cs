@@ -9,6 +9,7 @@ namespace TTMobileClient.Views
     {
         TTMobileClient.PortableAppSettings _portableAppSettings = null;
         bool _areSettingsLoaded = false;
+        private bool _useFakeSettingsData = true;
 
         ///********************************************************************
         /// <summary>
@@ -19,21 +20,29 @@ namespace TTMobileClient.Views
         public SettingsPage()
         {
             InitializeComponent();
-
-            //_portableAppSettings = PortableAppSettings.GetTestData();
-
-            //CreateSettingsTable();
         }
-
+   
+        ///********************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        ///********************************************************************
+        
         protected override void OnAppearing()
         {
-            //_portableAppSettings = PortableAppSettings.GetTestData();
-
-            if (0 < AppSettings.App.RemoteAppSettings.Count)
+            if (_useFakeSettingsData)
             {
-                //for now just take the first one, it's probably all we will ever need
-                _portableAppSettings = AppSettings.App.RemoteAppSettings[0];
+                _portableAppSettings = PortableAppSettings.GetTestData();
                 CreateSettingsTable();
+            }
+            else
+            {
+                if (0 < AppSettings.App.RemoteAppSettings.Count)
+                {
+                    //for now just take the first one, it's probably all we will ever need
+                    _portableAppSettings = AppSettings.App.RemoteAppSettings[0];
+                    CreateSettingsTable();
+                }
             }
 
             base.OnAppearing();
@@ -47,6 +56,8 @@ namespace TTMobileClient.Views
 
         private void CreateSettingsTable()
         {
+            _areSettingsLoaded = false;
+
             EntryCell ec;
             SwitchCell sc;
             this.Title = "Settings";
@@ -112,8 +123,61 @@ namespace TTMobileClient.Views
                 }
             }
 
-            Content = table;
+            var saveButton = new Button { Text = "Save", BackgroundColor = Color.Gray };
+            var cancelButton = new Button { Text = "Cancel", BackgroundColor = Color.Gray };
+
+            saveButton.Clicked += SaveButton_Clicked;
+            cancelButton.Clicked += CancelButton_Clicked;
+
+            var buttonStack = new StackLayout
+            {
+                IsVisible = true,
+                Spacing = 10,
+                HorizontalOptions = LayoutOptions.CenterAndExpand,
+                Orientation = StackOrientation.Horizontal,
+                Children = { saveButton, cancelButton }
+            };
+
+            Content = new StackLayout { Spacing = 0, 
+                Orientation = StackOrientation.Vertical, 
+                VerticalOptions = LayoutOptions.FillAndExpand,
+                Children = { 
+                    new ScrollView { Content = table },
+                    new StackLayout
+                    {
+                        IsVisible = true,
+                        Spacing = 10,
+                        HorizontalOptions = LayoutOptions.CenterAndExpand,
+                        Orientation = StackOrientation.Horizontal,
+                        Children = { saveButton, cancelButton }
+                    }}
+            };
+
             _areSettingsLoaded = true;
+        }
+
+        ///********************************************************************
+        /// <summary>
+        /// User clicked save button
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        ///********************************************************************
+        private void SaveButton_Clicked(object sender, EventArgs e)
+        {
+            _portableAppSettings?.SaveChanges();
+        }
+
+        ///********************************************************************
+        /// <summary>
+        /// User clicked cancel button
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        ///********************************************************************
+        private void CancelButton_Clicked(object sender, EventArgs e)
+        {
+            //noop
         }
 
         ///********************************************************************

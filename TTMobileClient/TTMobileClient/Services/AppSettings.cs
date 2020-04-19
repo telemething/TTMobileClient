@@ -228,6 +228,17 @@ namespace TTMobileClient
 
         //*********************************************************************
         /// <summary>
+        /// Create serialized data from this instance
+        /// </summary>
+        /// <returns></returns>
+        //*********************************************************************
+        public string Serialize(bool onlyChanged)
+        {
+            return Newtonsoft.Json.JsonConvert.SerializeObject(this);
+        }
+
+        //*********************************************************************
+        /// <summary>
         /// Find the appsetting of the given longname
         /// </summary>
         /// <param name="automationId"></param>
@@ -289,6 +300,11 @@ namespace TTMobileClient
                 default:
                     break;
             }
+        }
+
+        public void SaveChanges()
+        {
+
         }
 
         //*********************************************************************

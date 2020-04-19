@@ -13,6 +13,8 @@ namespace TTMobileClient.Services
     {
         public static string Settings_RegisterRemoteSettings { get; } = 
             "Settings.RegisterRemoteSettings";
+        public static string Settings_ChangeSettings { get; } =
+            "Settings.ChangeSettings";
     }
 
     //*************************************************************************
