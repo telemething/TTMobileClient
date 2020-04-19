@@ -162,7 +162,8 @@ namespace TTMobileClient
         /// <param name="description"></param>
         /// <param name="appSettings"></param>
         //*********************************************************************
-        public AppSettingCollection(string name, string description, List<AppSetting> appSettings)
+        public AppSettingCollection(string name, 
+            string description, List<AppSetting> appSettings)
         {
             _name = name;
             _description = description;
@@ -185,7 +186,8 @@ namespace TTMobileClient
         public string name => _name;
         //public object Value => _value;
         public object Description => _description;
-        public List<AppSettingCollection> AppSettingCollections => _appSettingCollections;
+        public List<AppSettingCollection> 
+            AppSettingCollections => _appSettingCollections;
 
         //*********************************************************************
         /// <summary>
@@ -212,29 +214,53 @@ namespace TTMobileClient
         //*********************************************************************
         public static PortableAppSettings Deserialize(string serializedData)
         {
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<PortableAppSettings>(serializedData);
+            return Newtonsoft.Json.JsonConvert.
+                DeserializeObject<PortableAppSettings>(serializedData);
         }
 
         //*********************************************************************
         /// <summary>
         /// Create serialized data from this instance
         /// </summary>
-        /// <returns></returns>
-        //*********************************************************************
-        public string Serialize()
-        {
-            return Newtonsoft.Json.JsonConvert.SerializeObject(this);
-        }
-
-        //*********************************************************************
-        /// <summary>
-        /// Create serialized data from this instance
-        /// </summary>
+        /// <param name="serializedData">Include only changed settings if true
+        /// </param>
         /// <returns></returns>
         //*********************************************************************
         public string Serialize(bool onlyChanged)
         {
-            return Newtonsoft.Json.JsonConvert.SerializeObject(this);
+            if(!onlyChanged)
+                return Newtonsoft.Json.JsonConvert.SerializeObject(this);
+
+            bool collectionAdded;
+            var settingCollectionsOut = new List<AppSettingCollection>();
+            var sc = new AppSettingCollection("","",new List<AppSetting>());
+
+            foreach (var settingCollection in AppSettingCollections)
+            {
+                collectionAdded = false;
+
+                foreach (var appSetting in settingCollection.AppSettings)
+                {
+                    if(appSetting.Changed)
+                    {
+                        if(!collectionAdded)
+                        {
+                            sc = new AppSettingCollection(settingCollection.name,
+                                settingCollection.Description as string,
+                                new List<AppSetting>());
+                            settingCollectionsOut.Add(sc);
+                            collectionAdded = true;
+                        }
+
+                        sc.AppSettings.Add(appSetting);
+                    }
+                }
+            }
+
+            PortableAppSettings returnVal = new PortableAppSettings(
+                this.name, this._description, settingCollectionsOut);
+
+            return Newtonsoft.Json.JsonConvert.SerializeObject(returnVal);
         }
 
         //*********************************************************************
@@ -251,7 +277,13 @@ namespace TTMobileClient
 
             foreach (var settingsCollection in _appSettingCollections)
             {
-                if (longname.Contains(settingsCollection.name))
+                if (null == settingsCollection.name)
+                    foreach (var setting in settingsCollection.AppSettings)
+                    {
+                        if (setting.name.Equals(longname))
+                            return setting;
+                    }
+                else if (longname.Contains(settingsCollection.name))
                     foreach (var setting in settingsCollection.AppSettings)
                     {
                         if ((settingsCollection.name + setting.name).Equals(longname))
@@ -302,9 +334,19 @@ namespace TTMobileClient
             }
         }
 
+        //*********************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        //*********************************************************************
         public void SaveChanges()
         {
+            //get a copy of changed settings
+            var retString = Serialize(true);
 
+            //send to connected device
+
+            //_was.
         }
 
         //*********************************************************************

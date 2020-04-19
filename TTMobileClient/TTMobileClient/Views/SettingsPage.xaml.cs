@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
@@ -56,6 +57,8 @@ namespace TTMobileClient.Views
 
         private void CreateSettingsTable()
         {
+            //prevent PropertyChanged events from being handled while building
+            //is underway
             _areSettingsLoaded = false;
 
             EntryCell ec;
@@ -123,21 +126,14 @@ namespace TTMobileClient.Views
                 }
             }
 
+            //create UI buttons
             var saveButton = new Button { Text = "Save", BackgroundColor = Color.Gray };
             var cancelButton = new Button { Text = "Cancel", BackgroundColor = Color.Gray };
 
             saveButton.Clicked += SaveButton_Clicked;
             cancelButton.Clicked += CancelButton_Clicked;
 
-            var buttonStack = new StackLayout
-            {
-                IsVisible = true,
-                Spacing = 10,
-                HorizontalOptions = LayoutOptions.CenterAndExpand,
-                Orientation = StackOrientation.Horizontal,
-                Children = { saveButton, cancelButton }
-            };
-
+            //create page contents
             Content = new StackLayout { Spacing = 0, 
                 Orientation = StackOrientation.Vertical, 
                 VerticalOptions = LayoutOptions.FillAndExpand,
@@ -153,7 +149,11 @@ namespace TTMobileClient.Views
                     }}
             };
 
-            _areSettingsLoaded = true;
+            //this has to be on a timer because PropertyChanged events fly out
+            //with some delay
+            var _wsApiTestTimer = 
+                new Timer((arg) => _areSettingsLoaded = true, new object(),
+                    new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 0, -1));
         }
 
         ///********************************************************************
