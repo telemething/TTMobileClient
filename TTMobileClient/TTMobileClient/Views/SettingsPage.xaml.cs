@@ -10,7 +10,7 @@ namespace TTMobileClient.Views
     {
         TTMobileClient.PortableAppSettings _portableAppSettings = null;
         bool _areSettingsLoaded = false;
-        private bool _useFakeSettingsData = true;
+        private bool _useFakeSettingsData = false;
 
         ///********************************************************************
         /// <summary>
@@ -163,9 +163,18 @@ namespace TTMobileClient.Views
         /// <param name="sender"></param>
         /// <param name="e"></param>
         ///********************************************************************
-        private void SaveButton_Clicked(object sender, EventArgs e)
+        private async void SaveButton_Clicked(object sender, EventArgs e)
         {
-            _portableAppSettings?.SaveChanges();
+            var result = await _portableAppSettings?.SaveChanges();
+
+            if(result.Result == WebApiLib.ResultEnum.ok)
+                Xamarin.Forms.Device.BeginInvokeOnMainThread(
+                    () => App.Current.MainPage.DisplayAlert(
+                        "Success", "Settings updated", "Ok"));
+            else 
+                Xamarin.Forms.Device.BeginInvokeOnMainThread(
+                    () => App.Current.MainPage.DisplayAlert(
+                         "Error", result.Result.ToString(), "Ok"));
         }
 
         ///********************************************************************

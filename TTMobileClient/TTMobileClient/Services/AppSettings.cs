@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Threading.Tasks;
 using TTMobileClient.Services;
 
 namespace TTMobileClient
@@ -339,14 +340,16 @@ namespace TTMobileClient
         /// 
         /// </summary>
         //*********************************************************************
-        public void SaveChanges()
+        public async Task<WebApiLib.Response> SaveChanges()
         {
             //get a copy of changed settings
             var retString = Serialize(true);
 
             //send to connected device
-
-            //_was.
+            return await TTMobileClient.Services.ApiService.Singleton?.Invoke(
+                WebApiMethodNames.Settings_ChangeSettings, 
+                    new List<WebApiLib.Argument> 
+                        { new WebApiLib.Argument( "Settings", retString ) });
         }
 
         //*********************************************************************

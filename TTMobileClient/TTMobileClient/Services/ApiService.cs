@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace TTMobileClient.Services
 {
@@ -67,6 +68,23 @@ namespace TTMobileClient.Services
 
             _was = new WebApiLib.WebApiServer();
             _was.StartServer(_webApiUrl, GotMessageCallback, GotEventCallback);
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="methodName"></param>
+        /// <param name="argumentList"></param>
+        /// <param name="timeoutMs"></param>
+        /// <returns></returns>
+        //*********************************************************************
+        public async Task<WebApiLib.Response> Invoke(string methodName,
+            List<WebApiLib.Argument> argumentList, int timeoutMs = 15000)
+        {
+            var request = new WebApiLib.Request(methodName, argumentList);
+
+            return await _was.Invoke(request, timeoutMs);
         }
 
         //*************************************************************************
