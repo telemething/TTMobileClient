@@ -40,11 +40,52 @@ using StartMission = RosClientLib.StartMission;
 
 namespace TTMobileClient.Views
 {
+    //*************************************************************************
+    /// <summary>
+    /// A status bar, shows status of devices and things
+    /// </summary>
+    //*************************************************************************
+    public class StatusBar : StackLayout
+    {
+        Button remoteConnectedButton = new Button 
+        { Text = "Remote", BackgroundColor = Color.LightGray };
+
+        public StatusBar()
+        {
+            Spacing = 10;
+            HorizontalOptions = LayoutOptions.Fill;
+            Orientation = StackOrientation.Horizontal;
+            Children.Add(remoteConnectedButton);
+
+            if(null != TTMobileClient.Services.ApiService.Singleton)
+            TTMobileClient.Services.ApiService.Singleton.ClientConnection += ConnectionEventHandler;
+        }
+
+        private void ConnectionEventHandler(object sender, 
+            TTMobileClient.Services.ApiService.ApiEventArgs e)
+        {
+            switch(e.EventType)
+            {
+                case Services.ApiService.ApiEventArgs.EventTypeEnum.connection:
+                    remoteConnectedButton.BackgroundColor = Color.Green;
+                    break;
+                case Services.ApiService.ApiEventArgs.EventTypeEnum.disconnection:
+                    remoteConnectedButton.BackgroundColor = Color.LightGray;
+                    break;
+            }
+        }
+    }
+
     public enum MissionStateEnum { Unknown, None, Sending, Sent, Starting, Underway, Failed, Completed }
     public enum LandedStateEnum { Unknown, Grounded, Liftoff, Flying, Landing, Failed }
     public enum ConnectionStateEnum { Unknown, NotConnected, Connecting, Connected, Failed, Dropped }
     public enum MapClickModeEnum { Unknown, SetSelfPosition, SetDronePosition, AddWaypoint, Locked }
 
+    //*************************************************************************
+    /// <summary>
+    /// 
+    /// </summary>
+    //*************************************************************************
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class MapPage : ContentPage
     {
@@ -446,7 +487,7 @@ namespace TTMobileClient.Views
 
                 var bottomTray = new StackLayout
                 {
-                    Spacing = 10,
+                    Spacing = 11,
                     HorizontalOptions = LayoutOptions.Fill,
                     Orientation = StackOrientation.Horizontal,
                     Children = { missionButton, planButton, _MessageLabel, mapStyleButton, configButton }
@@ -457,6 +498,9 @@ namespace TTMobileClient.Views
                 MapPlanstack.Children.Add(_planStack);
 
                 var stack = new StackLayout { Spacing = 0 };
+
+                stack.Children.Add(new StatusBar());
+
                 stack.Children.Add(MapPlanstack);
                 stack.Children.Add(_mapStyleStack);
                 stack.Children.Add(_configStack);

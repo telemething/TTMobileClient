@@ -46,6 +46,15 @@ namespace TTMobileClient.Services
         /// Fetch the singleton
         public static ApiService Singleton => _apiService;
 
+        public class ApiEventArgs 
+        {
+            public enum EventTypeEnum { connection, disconnection }
+            public EventTypeEnum EventType;
+            public string remoteDeviceName;
+        };
+        public delegate void ConnectionEventHandler(object sender, ApiEventArgs e);
+        public event ConnectionEventHandler ClientConnection;
+
         //*************************************************************************
         /// <summary>
         /// Constructor
@@ -123,15 +132,19 @@ namespace TTMobileClient.Services
                 switch(apiEvent.EventType)
                 {
                     case WebApiLib.ApiEvent.EventTypeEnum.connect:
-                        Xamarin.Forms.Device.BeginInvokeOnMainThread(
-                            () => App.Current.MainPage.DisplayAlert(
-                                "Connection", "API Client Connected", "Ok"));
+                        ClientConnection?.Invoke(this, new ApiEventArgs() 
+                        { 
+                            EventType = ApiEventArgs.EventTypeEnum.connection, 
+                            remoteDeviceName = "---" 
+                        });
                         break;
 
                     case WebApiLib.ApiEvent.EventTypeEnum.disconnect:
-                        Xamarin.Forms.Device.BeginInvokeOnMainThread(
-                            () => App.Current.MainPage.DisplayAlert(
-                                "Disconnection", "API Client Disconnected", "Ok"));
+                        ClientConnection?.Invoke(this, new ApiEventArgs()
+                        {
+                            EventType = ApiEventArgs.EventTypeEnum.disconnection,
+                            remoteDeviceName = "---"
+                        });
                         break;
                 }
             }
