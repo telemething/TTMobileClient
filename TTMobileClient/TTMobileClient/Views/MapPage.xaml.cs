@@ -45,36 +45,291 @@ namespace TTMobileClient.Views
     /// A status bar, shows status of devices and things
     /// </summary>
     //*************************************************************************
+
     public class StatusBar : StackLayout
     {
-        Button remoteConnectedButton = new Button 
-        { Text = "Remote", BackgroundColor = Color.LightGray };
+        RosClient.ConnectEventArgs _rosClientConnectEventArgs = null;
 
+        Button perifConnectionButton = new Button
+        { Text = "Perif", BackgroundColor = Color.LightGray };
+
+        Button rosConnectionButton = new Button
+        { Text = "ROS", BackgroundColor = Color.LightGray };
+
+        //*********************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        //*********************************************************************
         public StatusBar()
         {
             Spacing = 10;
             HorizontalOptions = LayoutOptions.Fill;
             Orientation = StackOrientation.Horizontal;
-            Children.Add(remoteConnectedButton);
+            Children.Add(perifConnectionButton);
+            Children.Add(rosConnectionButton);
 
-            if(null != TTMobileClient.Services.ApiService.Singleton)
-            TTMobileClient.Services.ApiService.Singleton.ClientConnection += ConnectionEventHandler;
+            perifConnectionButton.Clicked += PerifConnectionButton_Clicked;
+            rosConnectionButton.Clicked += RosConnectionButton_Clicked;
+
+            if (null != TTMobileClient.Services.ApiService.Singleton)
+            TTMobileClient.Services.ApiService.Singleton.ClientConnection += PerifConnectionEventHandler;
+
+            RosClient.ConnectionEvent += RosConnectionEventHandler;
         }
 
-        private void ConnectionEventHandler(object sender, 
+        //*********************************************************************
+        /// <summary>
+        /// Displays information about the ApiServer connection
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        //*********************************************************************
+        private void PerifConnectionButton_Clicked(object sender, EventArgs e)
+        {
+            string message = "Not Connected";
+            string state = "Not Connected";
+
+            /*if (null != _rosClientConnectEventArgs)
+            {
+                message = _rosClientConnectEventArgs.RemoteDeviceName +
+                    " : " + _rosClientConnectEventArgs.Message;
+                state = _rosClientConnectEventArgs.EventType.ToString();
+            }
+
+            App.Current.MainPage.DisplayAlert(
+                state, message, "OK");*/
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// Called by the ApiSerivce on connection events
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        //*********************************************************************
+        private void PerifConnectionEventHandler(object sender,
             TTMobileClient.Services.ApiService.ApiEventArgs e)
         {
-            switch(e.EventType)
+            switch (e.EventType)
             {
                 case Services.ApiService.ApiEventArgs.EventTypeEnum.connection:
-                    remoteConnectedButton.BackgroundColor = Color.Green;
+                    perifConnectionButton.BackgroundColor = Color.Green;
                     break;
                 case Services.ApiService.ApiEventArgs.EventTypeEnum.disconnection:
-                    remoteConnectedButton.BackgroundColor = Color.LightGray;
+                    perifConnectionButton.BackgroundColor = Color.LightGray;
+                    break;
+            }
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// Displays information about the RosClient connection
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        //*********************************************************************
+        private void RosConnectionButton_Clicked(object sender, EventArgs e)
+        {
+            string message = "Not Connected";
+            string state = "Not Connected";
+
+            if (null != _rosClientConnectEventArgs)
+            {
+                message = _rosClientConnectEventArgs.RemoteDeviceName +
+                    " : " + _rosClientConnectEventArgs.Message;
+                state = _rosClientConnectEventArgs.EventType.ToString();
+            }
+
+            App.Current.MainPage.DisplayAlert(
+                state, message, "OK");
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// Called by the RosClient on connection events
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        //*********************************************************************
+        private void RosConnectionEventHandler(object sender,
+            RosClient.ConnectEventArgs e)
+        {
+            _rosClientConnectEventArgs = e;
+
+            switch (e.EventType)
+            {
+                case RosClient.ConnectEventArgs.EventTypeEnum.connecting:
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread( () =>
+                        rosConnectionButton.BackgroundColor = Color.Yellow );
+                    break;
+                case RosClient.ConnectEventArgs.EventTypeEnum.connected:
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
+                        rosConnectionButton.BackgroundColor = Color.Green );
+                    break;
+                case RosClient.ConnectEventArgs.EventTypeEnum.disconnected:
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
+                        rosConnectionButton.BackgroundColor = Color.LightGray );
+                    break;
+                case RosClient.ConnectEventArgs.EventTypeEnum.failure:
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
+                        rosConnectionButton.BackgroundColor = Color.Red );
                     break;
             }
         }
     }
+
+    //*************************************************************************
+    /// <summary>
+    /// A command bar, has buttons that execute commands
+    /// </summary>
+    //*************************************************************************
+
+    public class CommandBar : StackLayout
+    {
+        Button remoteConnectedButton = new Button
+        { Text = "Remote", BackgroundColor = Color.LightGray };
+
+        private MissionCtrl _missionCtrl;
+
+        Label _MessageLabel = new Label
+        {
+            Text = "Hi",
+            //TextColor = Color.Red,
+            //FontSize = 30,
+            HorizontalOptions = LayoutOptions.CenterAndExpand
+        };
+
+        ImageButton missionButton = new ImageButton
+        {
+            Source = "mission.png",
+            HorizontalOptions = LayoutOptions.Start,
+            VerticalOptions = LayoutOptions.CenterAndExpand
+        };
+        ImageButton planButton = new ImageButton
+        {
+            Source = "plan.png",
+            HorizontalOptions = LayoutOptions.Start,
+            VerticalOptions = LayoutOptions.Center,
+        };
+        ImageButton configButton = new ImageButton
+        {
+            Source = "adjust.png",
+            HorizontalOptions = LayoutOptions.End,
+            VerticalOptions = LayoutOptions.CenterAndExpand
+        };
+        ImageButton mapStyleButton = new ImageButton
+        {
+            Source = "view.png",
+            HorizontalOptions = LayoutOptions.End,
+            VerticalOptions = LayoutOptions.CenterAndExpand
+        };
+
+        // Map style buttons
+        Button mapStyleStreetButton = new Button { Text = "Street", BackgroundColor = Color.Gray };
+        Button mapStyleHybridButton = new Button { Text = "Hybrid", BackgroundColor = Color.Gray };
+        Button mapStyleSatelliteButton = new Button { Text = "Satellite", BackgroundColor = Color.Gray };
+
+        // Config buttons
+        Button configSelfLocationButton = new Button { Text = "Set Self Location", BackgroundColor = Color.Gray };
+        Button configDroneLocationButton = new Button { Text = "Set Drone Location", BackgroundColor = Color.Gray };
+
+        // Mission buttons
+        Button missionConnectButton = new Button { Text = "Connect", BackgroundColor = Color.Gray };
+        Button missionSendMissionButon = new Button { Text = "Send Mission", BackgroundColor = Color.Gray };
+        Button missionStartMissionButton = new Button { Text = "Start Mission", BackgroundColor = Color.Gray };
+        Button missionEndMissionButton = new Button { Text = "End Mission", BackgroundColor = Color.Gray };
+        Button missionClearMissionButton = new Button { Text = "Clear Mission", BackgroundColor = Color.Gray };
+
+        public StackLayout _mapStyleStack { set; get; }
+
+        public StackLayout _configStack { set; get; }
+
+        public StackLayout _planStack { set; get; }
+
+        public StackLayout _missionStack { set; get; }
+
+        public CommandBar()
+        {
+            _missionCtrl = new MissionCtrl();   //TODO * figure out what this does, I forgot
+
+            Spacing = 10;
+            HorizontalOptions = LayoutOptions.Fill;
+            Orientation = StackOrientation.Horizontal;
+            Children.Add(missionButton);
+            Children.Add(planButton);
+            Children.Add(_MessageLabel);
+            Children.Add(mapStyleButton);
+            Children.Add(configButton);
+
+            missionButton.Clicked += (sender, args) =>
+            { _mapStyleStack.IsVisible = false; _missionStack.IsVisible = !_missionStack.IsVisible; _configStack.IsVisible = false; };
+            planButton.Clicked += (sender, args) =>
+            { /*_configStack.IsVisible = false; _missionStack.IsVisible = false;*/ _planStack.IsVisible = !_planStack.IsVisible; };
+            mapStyleButton.Clicked += (sender, args) =>
+            { _missionStack.IsVisible = false; _mapStyleStack.IsVisible = !_mapStyleStack.IsVisible; _configStack.IsVisible = false; };
+            configButton.Clicked += (sender, args) =>
+            { _mapStyleStack.IsVisible = false; _missionStack.IsVisible = false; _configStack.IsVisible = !_configStack.IsVisible; };
+
+            /*
+            // Map style buttons
+            mapStyleStreetButton.Clicked += HandleClicked;
+            mapStyleHybridButton.Clicked += HandleClicked;
+            mapStyleSatelliteButton.Clicked += HandleClicked;
+
+            // Config buttons
+            configSelfLocationButton.Clicked += HandleClicked;
+            configDroneLocationButton.Clicked += HandleClicked;
+
+            // Mission buttons
+            missionConnectButton.Clicked += HandleClicked;
+            missionSendMissionButon.Clicked += HandleClicked;
+            missionStartMissionButton.Clicked += HandleClicked;
+            missionEndMissionButton.Clicked += HandleClicked;
+            missionClearMissionButton.Clicked += HandleClicked;
+            */
+
+            _mapStyleStack = new StackLayout
+            {
+                IsVisible = true,
+                Spacing = 10,
+                HorizontalOptions = LayoutOptions.CenterAndExpand,
+                Orientation = StackOrientation.Horizontal,
+                Children = { mapStyleStreetButton, mapStyleHybridButton,
+                        mapStyleSatelliteButton }
+            };
+
+            _configStack = new StackLayout
+            {
+                IsVisible = false,
+                Spacing = 10,
+                HorizontalOptions = LayoutOptions.CenterAndExpand,
+                Orientation = StackOrientation.Horizontal,
+                Children = { configSelfLocationButton, configDroneLocationButton }
+            };
+
+            _planStack = new StackLayout
+            {
+                IsVisible = false,
+                Spacing = 10,
+                HorizontalOptions = LayoutOptions.CenterAndExpand,
+                Orientation = StackOrientation.Horizontal,
+                Children = { _missionCtrl.viewCtrl }
+            };
+
+            _missionStack = new StackLayout
+            {
+                IsVisible = false,
+                Spacing = 10,
+                HorizontalOptions = LayoutOptions.CenterAndExpand,
+                Orientation = StackOrientation.Horizontal,
+                Children = { missionConnectButton, missionSendMissionButon,
+                        missionStartMissionButton, missionEndMissionButton,
+                        missionClearMissionButton }
+            };
+        }
+    }
+
 
     public enum MissionStateEnum { Unknown, None, Sending, Sent, Starting, Underway, Failed, Completed }
     public enum LandedStateEnum { Unknown, Grounded, Liftoff, Flying, Landing, Failed }
@@ -311,6 +566,254 @@ namespace TTMobileClient.Views
         /// </summary>
         //*********************************************************************
 
+        private async Task<bool> ShowMap_shelveThis()
+        {
+            if (!await GetPermissions(new List<Permission>()
+                { Permission.Location, Permission.LocationWhenInUse }))
+                return false;
+
+            try
+            {
+                // create map
+                _map = new CustomMap(
+                    MapSpan.FromCenterAndRadius(
+                        new Position(TestLat, TestLong), Distance.FromMiles(0.3)))
+                {
+                    IsShowingUser = false,
+                    HeightRequest = 100,
+                    WidthRequest = 960,
+                    VerticalOptions = LayoutOptions.FillAndExpand,
+                };
+
+                _map.OnMapClick += OnMapClick;
+                _map.OnMapReady += MapOnOnMapReady;
+
+                //****************
+
+
+                // below implemented on uwp, not iOS or Android
+                //FaaUasLib.FaaUas faa = new FaaUas();
+                //faa.getData();
+
+                //_map.faaFascilityMap = faa.fascilityMap;
+                // above
+
+                /*_map.ShapeCoordinates = new List<Position>();
+
+                _map.ShapeCoordinates.Add(new Position(47.0166766905289, -123.000014237528));
+                _map.ShapeCoordinates.Add(new Position(47.0166766925289, -122.983347564466));
+                _map.ShapeCoordinates.Add(new Position(47.0000100214669, -122.983347560466));
+                _map.ShapeCoordinates.Add(new Position(47.0000100194669, -123.000014234528));
+
+                _map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(37.79752, -122.40183), Distance.FromMiles(0.1)));*/
+
+                //****************
+
+
+                // Map style buttons
+                /*var mapStyleStreetButton = new Button { Text = "Street", BackgroundColor = Color.Gray };
+                var mapStyleHybridButton = new Button { Text = "Hybrid", BackgroundColor = Color.Gray };
+                var mapStyleSatelliteButton = new Button { Text = "Satellite", BackgroundColor = Color.Gray };
+
+                mapStyleStreetButton.Clicked += HandleClicked;
+                mapStyleHybridButton.Clicked += HandleClicked;
+                mapStyleSatelliteButton.Clicked += HandleClicked;
+
+                // Config buttons
+                var configSelfLocationButton = new Button { Text = "Set Self Location", BackgroundColor = Color.Gray };
+                var configDroneLocationButton = new Button { Text = "Set Drone Location", BackgroundColor = Color.Gray };
+
+                configSelfLocationButton.Clicked += HandleClicked;
+                configDroneLocationButton.Clicked += HandleClicked;
+
+                // Mission buttons
+                var missionConnectButton = new Button { Text = "Connect", BackgroundColor = Color.Gray };
+                var missionSendMissionButon = new Button { Text = "Send Mission", BackgroundColor = Color.Gray };
+                var missionStartMissionButton = new Button { Text = "Start Mission", BackgroundColor = Color.Gray };
+                var missionEndMissionButton = new Button { Text = "End Mission", BackgroundColor = Color.Gray };
+                var missionClearMissionButton = new Button { Text = "Clear Mission", BackgroundColor = Color.Gray };
+
+                missionConnectButton.Clicked += HandleClicked;
+                missionSendMissionButon.Clicked += HandleClicked;
+                missionStartMissionButton.Clicked += HandleClicked;
+                missionEndMissionButton.Clicked += HandleClicked;
+                missionClearMissionButton.Clicked += HandleClicked;*/
+
+                // Coordinates Display
+                _StatusLatLabel = new Label { Text = "---", TextColor = Color.Red, FontSize = 20 };
+                _StatusLongLabel = new Label { Text = "---", TextColor = Color.Red, FontSize = 20 };
+                _StatusAltLabel = new Label { Text = "---", TextColor = Color.Red, FontSize = 20 };
+                _StatusLandedLabel = new Label { Text = "---", TextColor = Color.Red, FontSize = 20 };
+
+                // Popup stacks
+                /*_mapStyleStack = new StackLayout
+                {
+                    IsVisible = false,
+                    Spacing = 10,
+                    HorizontalOptions = LayoutOptions.CenterAndExpand,
+                    Orientation = StackOrientation.Horizontal,
+                    Children = { mapStyleStreetButton, mapStyleHybridButton,
+                        mapStyleSatelliteButton }
+                };
+
+                _configStack = new StackLayout
+                {
+                    IsVisible = false,
+                    Spacing = 10,
+                    HorizontalOptions = LayoutOptions.CenterAndExpand,
+                    Orientation = StackOrientation.Horizontal,
+                    Children = { configSelfLocationButton, configDroneLocationButton }
+                };*/
+
+                _planStack = new StackLayout
+                {
+                    IsVisible = false,
+                    Spacing = 10,
+                    HorizontalOptions = LayoutOptions.CenterAndExpand,
+                    Orientation = StackOrientation.Horizontal,
+                    Children = { _missionCtrl.viewCtrl }
+                };
+
+                /*_missionStack = new StackLayout
+                {
+                    IsVisible = false,
+                    Spacing = 10,
+                    HorizontalOptions = LayoutOptions.CenterAndExpand,
+                    Orientation = StackOrientation.Horizontal,
+                    Children = { missionConnectButton, missionSendMissionButon,
+                        missionStartMissionButton, missionEndMissionButton,
+                        missionClearMissionButton }
+                };*/
+
+                // Telemetry Stack
+                _telemStack = new StackLayout
+                {
+                    Spacing = 10,
+                    //HorizontalOptions = LayoutOptions.CenterAndExpand,
+                    VerticalOptions = LayoutOptions.StartAndExpand,
+                    Orientation = StackOrientation.Vertical,
+                    Children = { _StatusLatLabel, _StatusLongLabel, _StatusAltLabel }
+                };
+
+                // Bottom Tray
+
+                /*_MessageLabel = new Label
+                {
+                    Text = "Hi",
+                    //TextColor = Color.Red,
+                    //FontSize = 30,
+                    HorizontalOptions = LayoutOptions.CenterAndExpand
+                };
+
+                ImageButton missionButton = new ImageButton
+                {
+                    Source = "mission.png",
+                    HorizontalOptions = LayoutOptions.Start,
+                    VerticalOptions = LayoutOptions.CenterAndExpand
+                };
+                ImageButton planButton = new ImageButton
+                {
+                    Source = "plan.png",
+                    HorizontalOptions = LayoutOptions.Start,
+                    VerticalOptions = LayoutOptions.Center,
+                };
+                ImageButton configButton = new ImageButton
+                {
+                    Source = "adjust.png",
+                    HorizontalOptions = LayoutOptions.End,
+                    VerticalOptions = LayoutOptions.CenterAndExpand
+                };
+                ImageButton mapStyleButton = new ImageButton
+                {
+                    Source = "view.png",
+                    HorizontalOptions = LayoutOptions.End,
+                    VerticalOptions = LayoutOptions.CenterAndExpand
+                };
+
+
+                missionButton.Clicked += (sender, args) =>
+                { _mapStyleStack.IsVisible = false; _missionStack.IsVisible = !_missionStack.IsVisible; _configStack.IsVisible = false; };
+                planButton.Clicked += (sender, args) =>
+                { 
+                //_configStack.IsVisible = false; _missionStack.IsVisible = false;
+                _planStack.IsVisible = !_planStack.IsVisible; };
+                mapStyleButton.Clicked += (sender, args) =>
+                { _missionStack.IsVisible = false; _mapStyleStack.IsVisible = !_mapStyleStack.IsVisible; _configStack.IsVisible = false; };
+                configButton.Clicked += (sender, args) =>
+                { _mapStyleStack.IsVisible = false; _missionStack.IsVisible = false; _configStack.IsVisible = !_configStack.IsVisible; };
+
+                var bottomTray = new StackLayout
+                {
+                    Spacing = 11,
+                    HorizontalOptions = LayoutOptions.Fill,
+                    Orientation = StackOrientation.Horizontal,
+                    Children = { missionButton, planButton, _MessageLabel, mapStyleButton, configButton }
+                };*/
+
+                var MapPlanstack = new StackLayout { Spacing = 0, Orientation = StackOrientation.Horizontal, VerticalOptions = LayoutOptions.FillAndExpand };
+                MapPlanstack.Children.Add(_map);
+                MapPlanstack.Children.Add(_planStack);
+
+                var stack = new StackLayout { Spacing = 0 };
+
+                var commandBar = new CommandBar();
+
+                stack.Children.Add(new StatusBar());
+
+                stack.Children.Add(MapPlanstack);
+                stack.Children.Add(commandBar._mapStyleStack);
+                stack.Children.Add(commandBar._configStack);
+                stack.Children.Add(commandBar._missionStack);
+
+                stack.Children.Add(new CommandBar());
+
+                var layout = new AbsoluteLayout();
+
+                layout.Children.Add(stack);
+                AbsoluteLayout.SetLayoutBounds(stack,
+                    new Rectangle(0, 0, 1, 1));
+                AbsoluteLayout.SetLayoutFlags(stack,
+                    AbsoluteLayoutFlags.All);
+
+                layout.Children.Add(_telemStack);
+                AbsoluteLayout.SetLayoutBounds(_telemStack,
+                    new Rectangle(.01, .9, 250, 200));
+                AbsoluteLayout.SetLayoutFlags(_telemStack,
+                    AbsoluteLayoutFlags.PositionProportional);
+
+                /*layout.Children.Add(_configStack);
+                AbsoluteLayout.SetLayoutBounds(_configStack, 
+                    new Rectangle(.5, .9, 200, 40));
+                AbsoluteLayout.SetLayoutFlags(_configStack, 
+                    AbsoluteLayoutFlags.PositionProportional);
+
+                layout.Children.Add(_missionStack);
+                AbsoluteLayout.SetLayoutBounds(_missionStack, 
+                    new Rectangle(.5, .9, 200, 40));
+                AbsoluteLayout.SetLayoutFlags(_missionStack, 
+                    AbsoluteLayoutFlags.PositionProportional);*/
+
+                Content = layout;
+
+                //ShowCurrentPositionOnMap();
+
+                //TestDropCustomPin();
+
+                //TestDrawPolyline();
+
+                UpdateMessageBox();
+
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                //logger.DebugLogError("Fatal Error on permissions: " + ex.Message);
+                await App.Current.MainPage.DisplayAlert(
+                    "Error", "Error: " + ex.Message, "Ok");
+                return false;
+            }
+        }
+
         private async Task<bool> ShowMap()
         {
             if (!await GetPermissions(new List<Permission>()
@@ -329,7 +832,7 @@ namespace TTMobileClient.Views
                     WidthRequest = 960,
                     VerticalOptions = LayoutOptions.FillAndExpand,
                 };
-  
+
                 _map.OnMapClick += OnMapClick;
                 _map.OnMapReady += MapOnOnMapReady;
 
@@ -480,7 +983,7 @@ namespace TTMobileClient.Views
                 { _mapStyleStack.IsVisible = false; _missionStack.IsVisible = !_missionStack.IsVisible; _configStack.IsVisible = false; };
                 planButton.Clicked += (sender, args) =>
                 { /*_configStack.IsVisible = false; _missionStack.IsVisible = false;*/ _planStack.IsVisible = !_planStack.IsVisible; };
-                mapStyleButton.Clicked += (sender, args) => 
+                mapStyleButton.Clicked += (sender, args) =>
                 { _missionStack.IsVisible = false; _mapStyleStack.IsVisible = !_mapStyleStack.IsVisible; _configStack.IsVisible = false; };
                 configButton.Clicked += (sender, args) =>
                 { _mapStyleStack.IsVisible = false; _missionStack.IsVisible = false; _configStack.IsVisible = !_configStack.IsVisible; };
@@ -511,15 +1014,15 @@ namespace TTMobileClient.Views
                 var layout = new AbsoluteLayout();
 
                 layout.Children.Add(stack);
-                AbsoluteLayout.SetLayoutBounds(stack, 
+                AbsoluteLayout.SetLayoutBounds(stack,
                     new Rectangle(0, 0, 1, 1));
-                AbsoluteLayout.SetLayoutFlags(stack, 
+                AbsoluteLayout.SetLayoutFlags(stack,
                     AbsoluteLayoutFlags.All);
 
                 layout.Children.Add(_telemStack);
-                AbsoluteLayout.SetLayoutBounds(_telemStack, 
+                AbsoluteLayout.SetLayoutBounds(_telemStack,
                     new Rectangle(.01, .9, 250, 200));
-                AbsoluteLayout.SetLayoutFlags(_telemStack, 
+                AbsoluteLayout.SetLayoutFlags(_telemStack,
                     AbsoluteLayoutFlags.PositionProportional);
 
                 /*layout.Children.Add(_configStack);
@@ -1105,9 +1608,9 @@ namespace TTMobileClient.Views
 
             this.ConnectionState = ConnectionStateEnum.Failed;
 
-            Xamarin.Forms.Device.BeginInvokeOnMainThread(
+            /*Xamarin.Forms.Device.BeginInvokeOnMainThread(
                 () => App.Current.MainPage.DisplayAlert(
-                    "Error", "Error: " + message, "Ok"));
+                    "Error", "Error: " + message, "Ok"));*/
         }
 
         //*********************************************************************

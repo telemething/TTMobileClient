@@ -95,6 +95,31 @@ namespace RosClientLib
         private string _webSocketUri;
         private RosSharp.RosBridgeClient.Protocols.WebSocketNetProtocol _webSocketProtocol;
 
+        public class ConnectEventArgs
+        {
+            public enum EventTypeEnum { connecting, connected, disconnected, failure }
+            public EventTypeEnum EventType;
+            public string RemoteDeviceName;
+            public string Message;
+
+            public ConnectEventArgs(EventTypeEnum eventType,
+                string remoteDeviceName, string message)
+            {
+                EventType = eventType;
+                RemoteDeviceName = remoteDeviceName;
+                Message = message;
+            }
+
+            public ConnectEventArgs(Exception ex, string remoteDeviceName)
+            {
+                EventType = EventTypeEnum.failure;
+                RemoteDeviceName = remoteDeviceName;
+                Message = ex.Message;
+            }
+        };
+        public delegate void ConnectionEventHandler(object sender, ConnectEventArgs e);
+        public static event ConnectionEventHandler ConnectionEvent;
+
         //*********************************************************************
         //*
         //*
@@ -141,15 +166,29 @@ namespace RosClientLib
                 _webSocketUri = uri;
                 _webSocketProtocol =
                     new RosSharp.RosBridgeClient.Protocols.WebSocketNetProtocol(uri);
+
+                if (null != ConnectionEvent)
+                    ConnectionEvent.Invoke(this, new ConnectEventArgs(ConnectEventArgs.EventTypeEnum.connecting, uri, "connecting"));
+
                 _rosSocket = new RosSocket(_webSocketProtocol,
-                    (sender, args) => onConnected?.Invoke(
-                        sender, new ConnectionEventArgs(args as RbConnectionEventArgs)), 
-                    (sender, args) => onConnectionFailed?.Invoke(
-                        sender, new ConnectionEventArgs(args as RbConnectionEventArgs)), 
+                    (sender, args) => {
+                        if(null != ConnectionEvent)
+                            ConnectionEvent.Invoke(this, new ConnectEventArgs(ConnectEventArgs.EventTypeEnum.connected, uri, "connected"));
+                        onConnected?.Invoke(
+                            sender, new ConnectionEventArgs(args as RbConnectionEventArgs));
+                    }, 
+                    (sender, args) => {
+                        if (null != ConnectionEvent)
+                            ConnectionEvent.Invoke(this, new ConnectEventArgs(ConnectEventArgs.EventTypeEnum.failure, uri, "failed"));
+                        onConnectionFailed?.Invoke(
+                            sender, new ConnectionEventArgs(args as RbConnectionEventArgs));
+                    }, 
                         RosSocket.SerializerEnum.JSON);
             }
             catch (Exception e)
             {
+                if (null != ConnectionEvent)
+                    ConnectionEvent.Invoke(this, new ConnectEventArgs(ConnectEventArgs.EventTypeEnum.failure, uri, e.Message));
                 throw new Exception($"Connect({uri}) failed : {e.Message}");
             }
         }
