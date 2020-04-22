@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using TThingComLib.Messages;
+
 
 namespace TTMobileClient
 {
@@ -62,17 +64,55 @@ namespace TTMobileClient
 
         //*********************************************************************
         /// <summary>
-        /// 
+        /// Find IP address of device, doesnt seem to work on iOS
+        /// </summary>
+        //*********************************************************************
+
+        private string FetchIpAddressOld()
+        {
+            try
+            {
+                var addresses = System.Net.Dns.GetHostAddresses(System.Net.Dns.GetHostName());
+
+                foreach (var address in addresses)
+                    if (address.ToString().Contains(_addressPrefix))
+                        return address.ToString();
+            }
+            catch(Exception ex)
+            {
+                //logger.DebugLogError("Fatal Error on permissions: " + ex.Message);
+                App.Current.MainPage.DisplayAlert(
+                    "FetchIpAddress() Exception:", "Error: " + ex.Message, "Ok");
+            }
+
+            return null;
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// Find IP address of device
         /// </summary>
         //*********************************************************************
 
         private string FetchIpAddress()
         {
-            var addresses = System.Net.Dns.GetHostAddresses(System.Net.Dns.GetHostName());
+            try
+            {
 
-            foreach(var address in addresses)
-                if (address.ToString().Contains(_addressPrefix))
-                    return address.ToString();
+                foreach (var netInterface in NetworkInterface.GetAllNetworkInterfaces())
+                    if (netInterface.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 ||
+                        netInterface.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
+                        foreach (var addrInfo in netInterface.GetIPProperties().UnicastAddresses)
+                            if (addrInfo.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                                if (addrInfo.Address.ToString().Contains(_addressPrefix))
+                                    return addrInfo.Address.ToString();
+            }
+            catch (Exception ex)
+            {
+                //logger.DebugLogError("Fatal Error on permissions: " + ex.Message);
+                App.Current.MainPage.DisplayAlert(
+                    "FetchIpAddress() Exception:", "Error: " + ex.Message, "Ok");
+            }
 
             return null;
         }
