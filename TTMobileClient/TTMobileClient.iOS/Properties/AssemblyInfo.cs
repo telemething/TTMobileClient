@@ -9,9 +9,9 @@ using Xamarin.Forms;
 [assembly: AssemblyTitle("TTMobileClient.iOS")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Telemething")]
 [assembly: AssemblyProduct("TTMobileClient.iOS")]
-[assembly: AssemblyCopyright("Copyright ©  2014")]
+[assembly: AssemblyCopyright("Copyright ©  2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
