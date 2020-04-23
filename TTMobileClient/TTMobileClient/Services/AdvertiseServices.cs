@@ -9,11 +9,18 @@ using TThingComLib.Messages;
 
 namespace TTMobileClient
 {
+    //*************************************************************************
+    /// <summary>
+    /// 
+    /// </summary>
+    //*************************************************************************
     class AdvertiseServices
     {
-        private TThingComLib.Repeater _telemetryRepeater = new TThingComLib.Repeater();
+        private TThingComLib.Repeater _telemetryRepeater = 
+            new TThingComLib.Repeater();
         private Timer _advertiseTimer;
-        private int _serviceAdvertisePeriodSeconds = AppSettings.ServiceAdvertisePeriodSeconds;
+        private int _serviceAdvertisePeriodSeconds = 
+            AppSettings.ServiceAdvertisePeriodSeconds;
         string _udpBroadcaseIP = AppSettings.UdpBroadcastIP;
         int _thingTelemPort = AppSettings.ThingTelemPort;
         private string _addressPrefix = AppSettings.AddressPrefix;
@@ -21,20 +28,37 @@ namespace TTMobileClient
         private bool _initialized = false;
         private string _address;
 
+        private static AdvertiseServices _singleton = null;
+
         //*********************************************************************
         /// <summary>
-        /// 
+        /// The singleton
+        /// </summary>
+        //*********************************************************************
+        public static AdvertiseServices Singleton
+        {
+            get 
+            {
+                if (null == _singleton)
+                    _singleton = new AdvertiseServices();
+                return _singleton;
+            }
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// Private constructor, force instanciation/access through singleton
         /// </summary>
         //*********************************************************************
 
-        public AdvertiseServices()
+        private AdvertiseServices()
         {
             Init();
         }
 
         //*********************************************************************
         /// <summary>
-        /// 
+        /// Initialize service
         /// </summary>
         /// <returns></returns>
         //*********************************************************************
@@ -64,7 +88,7 @@ namespace TTMobileClient
 
         //*********************************************************************
         /// <summary>
-        /// Find IP address of device, doesnt seem to work on iOS
+        /// Find IP address of device, doesn't seem to work on iOS
         /// </summary>
         //*********************************************************************
 
@@ -119,7 +143,7 @@ namespace TTMobileClient
 
         //*********************************************************************
         /// <summary>
-        /// 
+        /// Start the advertisment service
         /// </summary>
         //*********************************************************************
 
@@ -136,7 +160,7 @@ namespace TTMobileClient
 
         //*********************************************************************
         /// <summary>
-        /// 
+        /// Build the list of available services
         /// </summary>
         //*********************************************************************
 
@@ -155,7 +179,7 @@ namespace TTMobileClient
 
         //*********************************************************************
         /// <summary>
-        /// 
+        /// Called on a periodic basis to broadcast an advertisement
         /// </summary>
         /// <param name="state"></param>
         //*********************************************************************
@@ -178,5 +202,34 @@ namespace TTMobileClient
                 Console.WriteLine(e);
             }
         }
+
+        public class ServiceAdvertismentReceivedEventArgs
+        {
+            public string Sender { get; set; }
+            public List<TThingComLib.Messages.NetworkService> NetworkServices { get; set; }
+        }
+        public delegate void ServiceAdvertismentReceived(
+            object sender, ServiceAdvertismentReceivedEventArgs e);
+        public event ServiceAdvertismentReceived ServiceAdvertismentReceivedEvent;
+
+        //*********************************************************************
+        /// <summary>
+        /// Called by external object to indicate that a service advertisment 
+        /// has been received
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        //*********************************************************************
+        public void ServiceAdvertismentReceivedEventHandler(object sender, 
+            TThingComLib.Listener.ServiceAdvertismentReceivedEventArgs e)
+        {
+            ServiceAdvertismentReceivedEvent?.Invoke(this,
+                new ServiceAdvertismentReceivedEventArgs
+                {
+                    Sender = e.Sender,
+                    NetworkServices = e.NetworkServices
+                } );
+        }
+
     }
 }

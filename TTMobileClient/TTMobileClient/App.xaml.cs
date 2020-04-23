@@ -58,7 +58,8 @@ namespace TTMobileClient
 
             //we start the advertising service, informing remote devices of the
             //services we offer
-            _as = new AdvertiseServices();
+            //_as = new AdvertiseServices();
+            _as = AdvertiseServices.Singleton;
             _as.StartAdvertising();
         }
 

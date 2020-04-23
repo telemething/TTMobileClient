@@ -48,6 +48,9 @@ namespace TTMobileClient.Views
 
     public class StatusBar : StackLayout
     {
+        private enum RosConnectionStatusEnum { unknown, gotAdvertisedUrl, connecting, connected, disconected, error }
+        private RosConnectionStatusEnum _rosConnectionStatus = RosConnectionStatusEnum.unknown;
+
         RosClient.ConnectEventArgs _rosClientConnectEventArgs = null;
 
         Button perifConnectionButton = new Button
@@ -73,9 +76,41 @@ namespace TTMobileClient.Views
             rosConnectionButton.Clicked += RosConnectionButton_Clicked;
 
             if (null != TTMobileClient.Services.ApiService.Singleton)
-            TTMobileClient.Services.ApiService.Singleton.ClientConnection += PerifConnectionEventHandler;
+            TTMobileClient.Services.ApiService.Singleton.ClientConnection += 
+                    PerifConnectionEventHandler;
+
+            AdvertiseServices.Singleton.ServiceAdvertismentReceivedEvent += 
+                ServiceAdvertismentReceivedEvent;
 
             RosClient.ConnectionEvent += RosConnectionEventHandler;
+        }
+
+        string _rosBridgeServerUrlAdvertised = null;
+
+        //*********************************************************************
+        /// <summary>
+        /// Listen for service avilablity announcements
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        //*********************************************************************
+        private void ServiceAdvertismentReceivedEvent(
+            object sender, AdvertiseServices.ServiceAdvertismentReceivedEventArgs e)
+        {
+            foreach (var networkService in e.NetworkServices)
+            {
+                switch (networkService.ServiceType)
+                {
+                    case ServiceTypeEnum.RosBridge:
+                        if(_rosConnectionStatus == RosConnectionStatusEnum.unknown)
+                        {
+                            _rosConnectionStatus = RosConnectionStatusEnum.gotAdvertisedUrl;
+                            _rosBridgeServerUrlAdvertised = networkService.URL;
+                            rosConnectionButton.BackgroundColor = Color.LightBlue;
+                         }
+                        break;
+                }
+            }
         }
 
         //*********************************************************************
@@ -141,6 +176,34 @@ namespace TTMobileClient.Views
                 state = _rosClientConnectEventArgs.EventType.ToString();
             }
 
+            switch (_rosConnectionStatus)
+            {
+                case RosConnectionStatusEnum.unknown:
+                    message = "Not Connected, Unknown URL";
+                    state = "Unknown";
+                    break;
+                case RosConnectionStatusEnum.gotAdvertisedUrl:
+                    message = "Got URL: " + _rosBridgeServerUrlAdvertised;
+                    state = "Got URL";
+                    break;
+                case RosConnectionStatusEnum.connecting:
+                    message = "Not Connected, Unknown URL";
+                    state = "Connecting: " + _rosBridgeServerUrlAdvertised;
+                    break;
+                case RosConnectionStatusEnum.connected:
+                    message = "Not Connected, Unknown URL";
+                    state = "Connected: " + _rosBridgeServerUrlAdvertised;
+                    break;
+                case RosConnectionStatusEnum.disconected:
+                    message = "Not Connected, Unknown URL";
+                    state = "Disconnected: " + _rosBridgeServerUrlAdvertised;
+                    break;
+                case RosConnectionStatusEnum.error:
+                    message = "---";
+                    state = "error";
+                    break;
+            }
+
             App.Current.MainPage.DisplayAlert(
                 state, message, "OK");
         }
@@ -160,18 +223,22 @@ namespace TTMobileClient.Views
             switch (e.EventType)
             {
                 case RosClient.ConnectEventArgs.EventTypeEnum.connecting:
+                    _rosConnectionStatus = RosConnectionStatusEnum.connecting;
                     Xamarin.Forms.Device.BeginInvokeOnMainThread( () =>
                         rosConnectionButton.BackgroundColor = Color.Yellow );
                     break;
                 case RosClient.ConnectEventArgs.EventTypeEnum.connected:
+                    _rosConnectionStatus = RosConnectionStatusEnum.connected;
                     Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
                         rosConnectionButton.BackgroundColor = Color.Green );
                     break;
                 case RosClient.ConnectEventArgs.EventTypeEnum.disconnected:
+                    _rosConnectionStatus = RosConnectionStatusEnum.disconected;
                     Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
                         rosConnectionButton.BackgroundColor = Color.LightGray );
                     break;
                 case RosClient.ConnectEventArgs.EventTypeEnum.failure:
+                    _rosConnectionStatus = RosConnectionStatusEnum.error;
                     Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
                         rosConnectionButton.BackgroundColor = Color.Red );
                     break;
@@ -473,6 +540,10 @@ namespace TTMobileClient.Views
             try
             {
                 _telemetryUdpListener = new Listener(45679, GotMessageCallback);
+                //_telemetryUdpListener.ServiceAdvertismentReceivedEvent +=
+                //    ServiceAdvertismentReceivedEvent;
+                _telemetryUdpListener.ServiceAdvertismentReceivedEvent +=
+                    AdvertiseServices.Singleton.ServiceAdvertismentReceivedEventHandler;
                 _telemetryUdpListener.Connect();
 
                 if (_runWacLoopbackTest)
@@ -492,6 +563,29 @@ namespace TTMobileClient.Views
             }
 
             return true;
+        }
+
+        string _rosBridgeServerUrlAdvertised = null;
+
+        //*********************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        //*********************************************************************
+        private void ServiceAdvertismentReceivedEvent(object sender, 
+            Listener.ServiceAdvertismentReceivedEventArgs e)
+        {
+            foreach(var networkService in e.NetworkServices)
+            {
+                switch(networkService.ServiceType)
+                {
+                    case ServiceTypeEnum.RosBridge:
+                        _rosBridgeServerUrlAdvertised = networkService.URL;
+                        break;
+                }
+            }
         }
 
         //*********************************************************************
