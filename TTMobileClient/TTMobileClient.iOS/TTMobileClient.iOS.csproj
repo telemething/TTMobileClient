@@ -32,7 +32,7 @@
     <CodesignExtraArgs />
     <CodesignResourceRules />
     <CodesignEntitlements />
-    <CodesignKey>iPhone Developer: Mark West (6E78ZRXHRT)</CodesignKey>
+    <CodesignKey>Apple Development: Mark West (6E78ZRXHRT)</CodesignKey>
     <CodesignProvision>VS: WildCard Development</CodesignProvision>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
