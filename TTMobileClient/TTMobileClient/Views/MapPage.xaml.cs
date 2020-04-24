@@ -48,10 +48,17 @@ namespace TTMobileClient.Views
 
     public class StatusBar : StackLayout
     {
+        Page _parentPage = null;
+
         private enum RosConnectionStatusEnum { unknown, gotAdvertisedUrl, connecting, connected, disconected, error }
         private RosConnectionStatusEnum _rosConnectionStatus = RosConnectionStatusEnum.unknown;
+        string _rosBridgeServerUrlAdvertised = "";
+
+        private enum PerifConnectionStatusEnum { unknown, connecting, connected, disconected, error }
+        private PerifConnectionStatusEnum _perifConnectionStatus = PerifConnectionStatusEnum.unknown;
 
         RosClient.ConnectEventArgs _rosClientConnectEventArgs = null;
+        TTMobileClient.Services.ApiService.ApiEventArgs _perifConnectionEventArgs = null;
 
         Button perifConnectionButton = new Button
         { Text = "Perif", BackgroundColor = Color.LightGray };
@@ -64,13 +71,14 @@ namespace TTMobileClient.Views
         /// 
         /// </summary>
         //*********************************************************************
-        public StatusBar()
+        public StatusBar(Page parentPage)
         {
             Spacing = 10;
             HorizontalOptions = LayoutOptions.Fill;
             Orientation = StackOrientation.Horizontal;
             Children.Add(perifConnectionButton);
             Children.Add(rosConnectionButton);
+            _parentPage = parentPage;
 
             perifConnectionButton.Clicked += PerifConnectionButton_Clicked;
             rosConnectionButton.Clicked += RosConnectionButton_Clicked;
@@ -85,7 +93,6 @@ namespace TTMobileClient.Views
             RosClient.ConnectionEvent += RosConnectionEventHandler;
         }
 
-        string _rosBridgeServerUrlAdvertised = null;
 
         //*********************************************************************
         /// <summary>
@@ -113,6 +120,16 @@ namespace TTMobileClient.Views
             }
         }
 
+        public class PerfConnectionUserActions
+        {
+            public const string Connect = "Connect";
+            public const string Disconnect = "Disconnect";
+            public const string Reconnect = "Reconnect";
+            public const string Block = "Block";
+            public const string Unknown = "Unknown";
+            public const string Cancel = "Cancel";
+        }
+
         //*********************************************************************
         /// <summary>
         /// Displays information about the ApiServer connection
@@ -120,20 +137,60 @@ namespace TTMobileClient.Views
         /// <param name="sender"></param>
         /// <param name="e"></param>
         //*********************************************************************
-        private void PerifConnectionButton_Clicked(object sender, EventArgs e)
+        private async void PerifConnectionButton_Clicked(object sender, EventArgs e)
         {
-            string message = "Not Connected";
-            string state = "Not Connected";
+            string deviceName = "---";
+            string action = "unkown";
 
-            /*if (null != _rosClientConnectEventArgs)
+            if (null != _perifConnectionEventArgs)
+                deviceName = _perifConnectionEventArgs.remoteDeviceName;
+
+            switch (_perifConnectionStatus)
             {
-                message = _rosClientConnectEventArgs.RemoteDeviceName +
-                    " : " + _rosClientConnectEventArgs.Message;
-                state = _rosClientConnectEventArgs.EventType.ToString();
+                case PerifConnectionStatusEnum.unknown:
+                    action = await _parentPage?.DisplayActionSheet(
+                        PerfConnectionUserActions.Unknown,
+                        PerfConnectionUserActions.Cancel, null);
+                    break;
+                case PerifConnectionStatusEnum.connected:
+                    action = await _parentPage?.DisplayActionSheet(
+                        "Connected: " + deviceName,
+                        PerfConnectionUserActions.Cancel, null,
+                        PerfConnectionUserActions.Disconnect,
+                        PerfConnectionUserActions.Reconnect,
+                        PerfConnectionUserActions.Block);
+                    break;
+                case PerifConnectionStatusEnum.disconected:
+                    action = await _parentPage?.DisplayActionSheet(
+                        "Disconnected: " + deviceName,
+                        PerfConnectionUserActions.Cancel, null,
+                        PerfConnectionUserActions.Connect,
+                        PerfConnectionUserActions.Block);
+                    break;
+                case PerifConnectionStatusEnum.error:
+                    action = await _parentPage?.DisplayActionSheet(
+                        "Error: " + deviceName,
+                        PerfConnectionUserActions.Cancel, null,
+                        PerfConnectionUserActions.Connect,
+                        PerfConnectionUserActions.Block);
+                    break;
             }
 
-            App.Current.MainPage.DisplayAlert(
-                state, message, "OK");*/
+            switch (action)
+            {
+                case PerfConnectionUserActions.Block:
+                    //TODO
+                    break;
+                case PerfConnectionUserActions.Connect:
+                    //TODO
+                    break;
+                case PerfConnectionUserActions.Disconnect:
+                    //TODO
+                    break;
+                case PerfConnectionUserActions.Reconnect:
+                    //TODO
+                    break;
+            }
         }
 
         //*********************************************************************
@@ -149,10 +206,19 @@ namespace TTMobileClient.Views
             switch (e.EventType)
             {
                 case Services.ApiService.ApiEventArgs.EventTypeEnum.connection:
+                    _perifConnectionEventArgs = e;
+                    _perifConnectionStatus = PerifConnectionStatusEnum.connected;
                     perifConnectionButton.BackgroundColor = Color.Green;
                     break;
                 case Services.ApiService.ApiEventArgs.EventTypeEnum.disconnection:
+                    _perifConnectionEventArgs = e;
+                    _perifConnectionStatus = PerifConnectionStatusEnum.disconected;
                     perifConnectionButton.BackgroundColor = Color.LightGray;
+                    break;
+                case Services.ApiService.ApiEventArgs.EventTypeEnum.failure:
+                    _perifConnectionEventArgs = e;
+                    _perifConnectionStatus = PerifConnectionStatusEnum.error;
+                    perifConnectionButton.BackgroundColor = Color.Red;
                     break;
             }
         }
@@ -164,10 +230,11 @@ namespace TTMobileClient.Views
         /// <param name="sender"></param>
         /// <param name="e"></param>
         //*********************************************************************
-        private void RosConnectionButton_Clicked(object sender, EventArgs e)
+        private async void RosConnectionButton_Clicked(object sender, EventArgs e)
         {
             string message = "Not Connected";
             string state = "Not Connected";
+            string action = "";
 
             if (null != _rosClientConnectEventArgs)
             {
@@ -179,33 +246,64 @@ namespace TTMobileClient.Views
             switch (_rosConnectionStatus)
             {
                 case RosConnectionStatusEnum.unknown:
-                    message = "Not Connected, Unknown URL";
-                    state = "Unknown";
+                    action = await _parentPage?.DisplayActionSheet(
+                        PerfConnectionUserActions.Unknown, 
+                        PerfConnectionUserActions.Cancel, null);
                     break;
                 case RosConnectionStatusEnum.gotAdvertisedUrl:
-                    message = "Got URL: " + _rosBridgeServerUrlAdvertised;
-                    state = "Got URL";
+                    action = await _parentPage?.DisplayActionSheet(
+                        "Got URL: " + _rosBridgeServerUrlAdvertised,
+                        PerfConnectionUserActions.Cancel, null,
+                        PerfConnectionUserActions.Connect,
+                        PerfConnectionUserActions.Block);
                     break;
                 case RosConnectionStatusEnum.connecting:
-                    message = "Not Connected, Unknown URL";
-                    state = "Connecting: " + _rosBridgeServerUrlAdvertised;
+                    action = await _parentPage?.DisplayActionSheet(
+                        "Connecting: " + _rosBridgeServerUrlAdvertised,
+                        PerfConnectionUserActions.Cancel, null,
+                        PerfConnectionUserActions.Disconnect,
+                        PerfConnectionUserActions.Reconnect,
+                        PerfConnectionUserActions.Block);
                     break;
                 case RosConnectionStatusEnum.connected:
-                    message = "Not Connected, Unknown URL";
-                    state = "Connected: " + _rosBridgeServerUrlAdvertised;
+                    action = await _parentPage?.DisplayActionSheet(
+                       "Connected: " + _rosBridgeServerUrlAdvertised,
+                       PerfConnectionUserActions.Cancel, null,
+                       PerfConnectionUserActions.Disconnect,
+                       PerfConnectionUserActions.Reconnect,
+                       PerfConnectionUserActions.Block);
                     break;
                 case RosConnectionStatusEnum.disconected:
-                    message = "Not Connected, Unknown URL";
-                    state = "Disconnected: " + _rosBridgeServerUrlAdvertised;
+                    action = await _parentPage?.DisplayActionSheet(
+                        "Disconnected: " + _rosBridgeServerUrlAdvertised,
+                        PerfConnectionUserActions.Cancel, null,
+                        PerfConnectionUserActions.Connect,
+                        PerfConnectionUserActions.Block);
                     break;
                 case RosConnectionStatusEnum.error:
-                    message = "---";
-                    state = "error";
+                    action = await _parentPage?.DisplayActionSheet(
+                        "Error: " + _rosBridgeServerUrlAdvertised,
+                        PerfConnectionUserActions.Cancel, null,
+                        PerfConnectionUserActions.Connect,
+                        PerfConnectionUserActions.Block);
                     break;
             }
 
-            App.Current.MainPage.DisplayAlert(
-                state, message, "OK");
+            switch (action)
+            {
+                case PerfConnectionUserActions.Block:
+                    //TODO
+                    break;
+                case PerfConnectionUserActions.Connect:
+                    //TODO
+                    break;
+                case PerfConnectionUserActions.Disconnect:
+                    //TODO
+                    break;
+                case PerfConnectionUserActions.Reconnect:
+                    //TODO
+                    break;
+            }
         }
 
         //*********************************************************************
@@ -852,7 +950,7 @@ namespace TTMobileClient.Views
 
                 var commandBar = new CommandBar();
 
-                stack.Children.Add(new StatusBar());
+                stack.Children.Add(new StatusBar(this));
 
                 stack.Children.Add(MapPlanstack);
                 stack.Children.Add(commandBar._mapStyleStack);
@@ -1096,7 +1194,7 @@ namespace TTMobileClient.Views
 
                 var stack = new StackLayout { Spacing = 0 };
 
-                stack.Children.Add(new StatusBar());
+                stack.Children.Add(new StatusBar(this));
 
                 stack.Children.Add(MapPlanstack);
                 stack.Children.Add(_mapStyleStack);

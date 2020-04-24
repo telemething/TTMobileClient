@@ -48,7 +48,7 @@ namespace TTMobileClient.Services
 
         public class ApiEventArgs 
         {
-            public enum EventTypeEnum { connection, disconnection }
+            public enum EventTypeEnum { connection, disconnection, failure }
             public EventTypeEnum EventType;
             public string remoteDeviceName;
         };
@@ -135,7 +135,7 @@ namespace TTMobileClient.Services
                         ClientConnection?.Invoke(this, new ApiEventArgs() 
                         { 
                             EventType = ApiEventArgs.EventTypeEnum.connection, 
-                            remoteDeviceName = "---" 
+                            remoteDeviceName = apiEvent.RemoteAddress
                         });
                         break;
 
@@ -143,7 +143,7 @@ namespace TTMobileClient.Services
                         ClientConnection?.Invoke(this, new ApiEventArgs()
                         {
                             EventType = ApiEventArgs.EventTypeEnum.disconnection,
-                            remoteDeviceName = "---"
+                            remoteDeviceName = apiEvent.RemoteAddress
                         });
                         break;
                 }
