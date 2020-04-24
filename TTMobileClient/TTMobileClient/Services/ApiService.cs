@@ -12,7 +12,7 @@ namespace TTMobileClient.Services
     //*************************************************************************
     public class WebApiMethodNames
     {
-        public static string Settings_RegisterRemoteSettings { get; } = 
+        public static string Settings_RegisterRemoteSettings { get; } =
             "Settings.RegisterRemoteSettings";
         public static string Settings_ChangeSettings { get; } =
             "Settings.ChangeSettings";
@@ -36,17 +36,17 @@ namespace TTMobileClient.Services
 
         //list of request handling methods
         Dictionary<string, MethodCallback> _methodList = new Dictionary<string, MethodCallback>();
-        
+
         //The WebApi server on which to listen
         WebApiLib.WebApiServer _was = null;
-        
+
         //The URLof the WebApi Server
         string _webApiUrl = AppSettings.WebApiUrl;
 
         /// Fetch the singleton
         public static ApiService Singleton => _apiService;
 
-        public class ApiEventArgs 
+        public class ApiEventArgs
         {
             public enum EventTypeEnum { connection, disconnection, failure }
             public EventTypeEnum EventType;
@@ -129,12 +129,12 @@ namespace TTMobileClient.Services
         {
             try
             {
-                switch(apiEvent.EventType)
+                switch (apiEvent.EventType)
                 {
                     case WebApiLib.ApiEvent.EventTypeEnum.connect:
-                        ClientConnection?.Invoke(this, new ApiEventArgs() 
-                        { 
-                            EventType = ApiEventArgs.EventTypeEnum.connection, 
+                        ClientConnection?.Invoke(this, new ApiEventArgs()
+                        {
+                            EventType = ApiEventArgs.EventTypeEnum.connection,
                             remoteDeviceName = apiEvent.RemoteAddress
                         });
                         break;
@@ -201,3 +201,4 @@ namespace TTMobileClient.Services
         }
     }
 }
+

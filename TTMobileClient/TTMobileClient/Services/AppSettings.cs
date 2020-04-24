@@ -24,8 +24,8 @@ namespace TTMobileClient
         private static AppSettings _appSettings = null;
 
         //private static string _defaultRobotRosbridgeUrl = "ws://theflyingzephyr.ddns.net:9090";
-        //private static string _defaultRobotRosbridgeUrl = "ws://192.168.1.30:9090";
-        private static string _defaultRobotRosbridgeUrl = "ws://192.168.1.38:9090";
+        private static string _defaultRobotRosbridgeUrl = "ws://192.168.1.30:9090";
+        //private static string _defaultRobotRosbridgeUrl = "ws://192.168.1.38:9090";
         private static string _defaultRobotRosVideoUrl = "http://192.168.1.30:8080";
         private static double _defaultGeoCoordsLat = 47.6062;
         private static double _defaultGeoCoordsLon = -122.3321;

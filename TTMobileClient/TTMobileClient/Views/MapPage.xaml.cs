@@ -49,6 +49,7 @@ namespace TTMobileClient.Views
     public class StatusBar : StackLayout
     {
         Page _parentPage = null;
+
         private enum RosConnectionStatusEnum { unknown, gotAdvertisedUrl, connecting, connected, disconected, error }
         private RosConnectionStatusEnum _rosConnectionStatus = RosConnectionStatusEnum.unknown;
         string _rosBridgeServerUrlAdvertised = "";
@@ -83,10 +84,10 @@ namespace TTMobileClient.Views
             rosConnectionButton.Clicked += RosConnectionButton_Clicked;
 
             if (null != TTMobileClient.Services.ApiService.Singleton)
-            TTMobileClient.Services.ApiService.Singleton.ClientConnection += 
-                    PerifConnectionEventHandler;
+                TTMobileClient.Services.ApiService.Singleton.ClientConnection +=
+                        PerifConnectionEventHandler;
 
-            AdvertiseServices.Singleton.ServiceAdvertismentReceivedEvent += 
+            AdvertiseServices.Singleton.ServiceAdvertismentReceivedEvent +=
                 ServiceAdvertismentReceivedEvent;
 
             RosClient.ConnectionEvent += RosConnectionEventHandler;
@@ -108,12 +109,12 @@ namespace TTMobileClient.Views
                 switch (networkService.ServiceType)
                 {
                     case ServiceTypeEnum.RosBridge:
-                        if(_rosConnectionStatus == RosConnectionStatusEnum.unknown)
+                        if (_rosConnectionStatus == RosConnectionStatusEnum.unknown)
                         {
                             _rosConnectionStatus = RosConnectionStatusEnum.gotAdvertisedUrl;
                             _rosBridgeServerUrlAdvertised = networkService.URL;
                             rosConnectionButton.BackgroundColor = Color.LightBlue;
-                         }
+                        }
                         break;
                 }
             }
@@ -246,7 +247,7 @@ namespace TTMobileClient.Views
             {
                 case RosConnectionStatusEnum.unknown:
                     action = await _parentPage?.DisplayActionSheet(
-                        PerfConnectionUserActions.Unknown, 
+                        PerfConnectionUserActions.Unknown,
                         PerfConnectionUserActions.Cancel, null);
                     break;
                 case RosConnectionStatusEnum.gotAdvertisedUrl:
@@ -321,23 +322,23 @@ namespace TTMobileClient.Views
             {
                 case RosClient.ConnectEventArgs.EventTypeEnum.connecting:
                     _rosConnectionStatus = RosConnectionStatusEnum.connecting;
-                    Xamarin.Forms.Device.BeginInvokeOnMainThread( () =>
-                        rosConnectionButton.BackgroundColor = Color.Yellow );
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
+                       rosConnectionButton.BackgroundColor = Color.Yellow);
                     break;
                 case RosClient.ConnectEventArgs.EventTypeEnum.connected:
                     _rosConnectionStatus = RosConnectionStatusEnum.connected;
                     Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
-                        rosConnectionButton.BackgroundColor = Color.Green );
+                        rosConnectionButton.BackgroundColor = Color.Green);
                     break;
                 case RosClient.ConnectEventArgs.EventTypeEnum.disconnected:
                     _rosConnectionStatus = RosConnectionStatusEnum.disconected;
                     Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
-                        rosConnectionButton.BackgroundColor = Color.LightGray );
+                        rosConnectionButton.BackgroundColor = Color.LightGray);
                     break;
                 case RosClient.ConnectEventArgs.EventTypeEnum.failure:
                     _rosConnectionStatus = RosConnectionStatusEnum.error;
                     Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
-                        rosConnectionButton.BackgroundColor = Color.Red );
+                        rosConnectionButton.BackgroundColor = Color.Red);
                     break;
             }
         }
@@ -395,6 +396,8 @@ namespace TTMobileClient.Views
         Button mapStyleSatelliteButton = new Button { Text = "Satellite", BackgroundColor = Color.Gray };
 
         // Config buttons
+        Button configLockButton = new Button { Text = "Lock Cursor", BackgroundColor = Color.Gray };
+        Button configAddWaypointsButton = new Button { Text = "Add Waypoints", BackgroundColor = Color.Gray };
         Button configSelfLocationButton = new Button { Text = "Set Self Location", BackgroundColor = Color.Gray };
         Button configDroneLocationButton = new Button { Text = "Set Drone Location", BackgroundColor = Color.Gray };
 
@@ -469,7 +472,7 @@ namespace TTMobileClient.Views
                 Spacing = 10,
                 HorizontalOptions = LayoutOptions.CenterAndExpand,
                 Orientation = StackOrientation.Horizontal,
-                Children = { configSelfLocationButton, configDroneLocationButton }
+                Children = { configLockButton, configAddWaypointsButton, configSelfLocationButton, configDroneLocationButton }
             };
 
             _planStack = new StackLayout
@@ -514,10 +517,11 @@ namespace TTMobileClient.Views
 
         #region private 
 
+        private bool _initialized = false;
         private int _heartbeatPeriodSeconds = AppSettings.HeartbeatPeriodSeconds;
         private int _selfTelemPeriodSeconds = AppSettings.SelfTelemPeriodSeconds;
         string _udpBroadcastIP = AppSettings.UdpBroadcastIP;
-        int _thingTelemPort = AppSettings.ThingTelemPort; 
+        int _thingTelemPort = AppSettings.ThingTelemPort;
 
         private bool _sendSelfTelem = true;  //*** TODO * Make this a config item
         private bool _runWacLoopbackTest = false;
@@ -527,6 +531,7 @@ namespace TTMobileClient.Views
 
         private IRosClient _rosClient = null;
 
+        WebApiLib.WebApiClient wac;
         private CustomMap _map;
         private Plugin.Geolocator.Abstractions.Position _myPosition;
         private Timer _heartbeatTimer;
@@ -594,8 +599,6 @@ namespace TTMobileClient.Views
         {
             _missionCtrl = new MissionCtrl();
             InitializeComponent();
-
-            //DisplayActionSheet("ActionSheet: Send to?", "Cancel", null, "Email", "Twitter", "Facebook");
         }
 
         //*********************************************************************
@@ -606,14 +609,33 @@ namespace TTMobileClient.Views
 
         protected override void OnAppearing()
         {
-            var ff1 = Xamarin.Essentials.DeviceInfo.DeviceType;
-            var ff2 = Xamarin.Essentials.DeviceInfo.Idiom;
-            var ff3 = Xamarin.Essentials.DeviceInfo.Manufacturer;
-            var ff4 = Xamarin.Essentials.DeviceInfo.Model;
-            var ff5 = Xamarin.Essentials.DeviceInfo.Name;
-            var ff6 = Xamarin.Essentials.DeviceInfo.Platform;
-            var ff7 = Xamarin.Essentials.DeviceInfo.Version;
-            var ff8 = Xamarin.Essentials.DeviceInfo.VersionString;
+            if (!_initialized)
+            {
+                Init();
+                _initialized = true;
+            }
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// The page is about to disappear
+        /// </summary>
+        //*********************************************************************
+
+        protected override void OnDisappearing()
+        {
+            base.OnDisappearing();
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// Initialize everything
+        /// </summary>
+        //*********************************************************************
+
+        private void Init()
+        {
+            //ShowDeviceInfo();
 
             base.OnAppearing();
             ShowMap();
@@ -626,7 +648,23 @@ namespace TTMobileClient.Views
             StartHeartbeatTimer();
         }
 
-        WebApiLib.WebApiClient wac;
+        //*********************************************************************
+        /// <summary>
+        /// Show Device Info
+        /// </summary>
+        //*********************************************************************
+
+        private void ShowDeviceInfo()
+        {
+            var ff1 = Xamarin.Essentials.DeviceInfo.DeviceType;
+            var ff2 = Xamarin.Essentials.DeviceInfo.Idiom;
+            var ff3 = Xamarin.Essentials.DeviceInfo.Manufacturer;
+            var ff4 = Xamarin.Essentials.DeviceInfo.Model;
+            var ff5 = Xamarin.Essentials.DeviceInfo.Name;
+            var ff6 = Xamarin.Essentials.DeviceInfo.Platform;
+            var ff7 = Xamarin.Essentials.DeviceInfo.Version;
+            var ff8 = Xamarin.Essentials.DeviceInfo.VersionString;
+        }
 
         //*********************************************************************
         /// <summary>
@@ -673,12 +711,12 @@ namespace TTMobileClient.Views
         /// <param name="sender"></param>
         /// <param name="e"></param>
         //*********************************************************************
-        private void ServiceAdvertismentReceivedEvent(object sender, 
+        private void ServiceAdvertismentReceivedEvent(object sender,
             Listener.ServiceAdvertismentReceivedEventArgs e)
         {
-            foreach(var networkService in e.NetworkServices)
+            foreach (var networkService in e.NetworkServices)
             {
-                switch(networkService.ServiceType)
+                switch (networkService.ServiceType)
                 {
                     case ServiceTypeEnum.RosBridge:
                         _rosBridgeServerUrlAdvertised = networkService.URL;
@@ -717,8 +755,8 @@ namespace TTMobileClient.Views
         //*********************************************************************
         private void GotMessageCallback(Message message)
         {
-            if(message?.Commands != null)
-                foreach(var command in message.Commands)
+            if (message?.Commands != null)
+                foreach (var command in message.Commands)
                     ProcessMessageCommand(command);
 
             //if (null != message.Coord)
@@ -739,7 +777,7 @@ namespace TTMobileClient.Views
             {
                 _telemetryRepeater.AddTransport(
                     TThingComLib.Repeater.TransportEnum.UDP,
-                    TThingComLib.Repeater.DialectEnum.ThingTelem, 
+                    TThingComLib.Repeater.DialectEnum.ThingTelem,
                     _udpBroadcastIP, _thingTelemPort, 500);
             }
             catch (Exception ex)
@@ -758,254 +796,6 @@ namespace TTMobileClient.Views
         /// Show the map, after getting permission from the OS to do so
         /// </summary>
         //*********************************************************************
-
-        private async Task<bool> ShowMap_shelveThis()
-        {
-            if (!await GetPermissions(new List<Permission>()
-                { Permission.Location, Permission.LocationWhenInUse }))
-                return false;
-
-            try
-            {
-                // create map
-                _map = new CustomMap(
-                    MapSpan.FromCenterAndRadius(
-                        new Position(TestLat, TestLong), Distance.FromMiles(0.3)))
-                {
-                    IsShowingUser = false,
-                    HeightRequest = 100,
-                    WidthRequest = 960,
-                    VerticalOptions = LayoutOptions.FillAndExpand,
-                };
-
-                _map.OnMapClick += OnMapClick;
-                _map.OnMapReady += MapOnOnMapReady;
-
-                //****************
-
-
-                // below implemented on uwp, not iOS or Android
-                //FaaUasLib.FaaUas faa = new FaaUas();
-                //faa.getData();
-
-                //_map.faaFascilityMap = faa.fascilityMap;
-                // above
-
-                /*_map.ShapeCoordinates = new List<Position>();
-
-                _map.ShapeCoordinates.Add(new Position(47.0166766905289, -123.000014237528));
-                _map.ShapeCoordinates.Add(new Position(47.0166766925289, -122.983347564466));
-                _map.ShapeCoordinates.Add(new Position(47.0000100214669, -122.983347560466));
-                _map.ShapeCoordinates.Add(new Position(47.0000100194669, -123.000014234528));
-
-                _map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(37.79752, -122.40183), Distance.FromMiles(0.1)));*/
-
-                //****************
-
-
-                // Map style buttons
-                /*var mapStyleStreetButton = new Button { Text = "Street", BackgroundColor = Color.Gray };
-                var mapStyleHybridButton = new Button { Text = "Hybrid", BackgroundColor = Color.Gray };
-                var mapStyleSatelliteButton = new Button { Text = "Satellite", BackgroundColor = Color.Gray };
-
-                mapStyleStreetButton.Clicked += HandleClicked;
-                mapStyleHybridButton.Clicked += HandleClicked;
-                mapStyleSatelliteButton.Clicked += HandleClicked;
-
-                // Config buttons
-                var configSelfLocationButton = new Button { Text = "Set Self Location", BackgroundColor = Color.Gray };
-                var configDroneLocationButton = new Button { Text = "Set Drone Location", BackgroundColor = Color.Gray };
-
-                configSelfLocationButton.Clicked += HandleClicked;
-                configDroneLocationButton.Clicked += HandleClicked;
-
-                // Mission buttons
-                var missionConnectButton = new Button { Text = "Connect", BackgroundColor = Color.Gray };
-                var missionSendMissionButon = new Button { Text = "Send Mission", BackgroundColor = Color.Gray };
-                var missionStartMissionButton = new Button { Text = "Start Mission", BackgroundColor = Color.Gray };
-                var missionEndMissionButton = new Button { Text = "End Mission", BackgroundColor = Color.Gray };
-                var missionClearMissionButton = new Button { Text = "Clear Mission", BackgroundColor = Color.Gray };
-
-                missionConnectButton.Clicked += HandleClicked;
-                missionSendMissionButon.Clicked += HandleClicked;
-                missionStartMissionButton.Clicked += HandleClicked;
-                missionEndMissionButton.Clicked += HandleClicked;
-                missionClearMissionButton.Clicked += HandleClicked;*/
-
-                // Coordinates Display
-                _StatusLatLabel = new Label { Text = "---", TextColor = Color.Red, FontSize = 20 };
-                _StatusLongLabel = new Label { Text = "---", TextColor = Color.Red, FontSize = 20 };
-                _StatusAltLabel = new Label { Text = "---", TextColor = Color.Red, FontSize = 20 };
-                _StatusLandedLabel = new Label { Text = "---", TextColor = Color.Red, FontSize = 20 };
-
-                // Popup stacks
-                /*_mapStyleStack = new StackLayout
-                {
-                    IsVisible = false,
-                    Spacing = 10,
-                    HorizontalOptions = LayoutOptions.CenterAndExpand,
-                    Orientation = StackOrientation.Horizontal,
-                    Children = { mapStyleStreetButton, mapStyleHybridButton,
-                        mapStyleSatelliteButton }
-                };
-
-                _configStack = new StackLayout
-                {
-                    IsVisible = false,
-                    Spacing = 10,
-                    HorizontalOptions = LayoutOptions.CenterAndExpand,
-                    Orientation = StackOrientation.Horizontal,
-                    Children = { configSelfLocationButton, configDroneLocationButton }
-                };*/
-
-                _planStack = new StackLayout
-                {
-                    IsVisible = false,
-                    Spacing = 10,
-                    HorizontalOptions = LayoutOptions.CenterAndExpand,
-                    Orientation = StackOrientation.Horizontal,
-                    Children = { _missionCtrl.viewCtrl }
-                };
-
-                /*_missionStack = new StackLayout
-                {
-                    IsVisible = false,
-                    Spacing = 10,
-                    HorizontalOptions = LayoutOptions.CenterAndExpand,
-                    Orientation = StackOrientation.Horizontal,
-                    Children = { missionConnectButton, missionSendMissionButon,
-                        missionStartMissionButton, missionEndMissionButton,
-                        missionClearMissionButton }
-                };*/
-
-                // Telemetry Stack
-                _telemStack = new StackLayout
-                {
-                    Spacing = 10,
-                    //HorizontalOptions = LayoutOptions.CenterAndExpand,
-                    VerticalOptions = LayoutOptions.StartAndExpand,
-                    Orientation = StackOrientation.Vertical,
-                    Children = { _StatusLatLabel, _StatusLongLabel, _StatusAltLabel }
-                };
-
-                // Bottom Tray
-
-                /*_MessageLabel = new Label
-                {
-                    Text = "Hi",
-                    //TextColor = Color.Red,
-                    //FontSize = 30,
-                    HorizontalOptions = LayoutOptions.CenterAndExpand
-                };
-
-                ImageButton missionButton = new ImageButton
-                {
-                    Source = "mission.png",
-                    HorizontalOptions = LayoutOptions.Start,
-                    VerticalOptions = LayoutOptions.CenterAndExpand
-                };
-                ImageButton planButton = new ImageButton
-                {
-                    Source = "plan.png",
-                    HorizontalOptions = LayoutOptions.Start,
-                    VerticalOptions = LayoutOptions.Center,
-                };
-                ImageButton configButton = new ImageButton
-                {
-                    Source = "adjust.png",
-                    HorizontalOptions = LayoutOptions.End,
-                    VerticalOptions = LayoutOptions.CenterAndExpand
-                };
-                ImageButton mapStyleButton = new ImageButton
-                {
-                    Source = "view.png",
-                    HorizontalOptions = LayoutOptions.End,
-                    VerticalOptions = LayoutOptions.CenterAndExpand
-                };
-
-
-                missionButton.Clicked += (sender, args) =>
-                { _mapStyleStack.IsVisible = false; _missionStack.IsVisible = !_missionStack.IsVisible; _configStack.IsVisible = false; };
-                planButton.Clicked += (sender, args) =>
-                { 
-                //_configStack.IsVisible = false; _missionStack.IsVisible = false;
-                _planStack.IsVisible = !_planStack.IsVisible; };
-                mapStyleButton.Clicked += (sender, args) =>
-                { _missionStack.IsVisible = false; _mapStyleStack.IsVisible = !_mapStyleStack.IsVisible; _configStack.IsVisible = false; };
-                configButton.Clicked += (sender, args) =>
-                { _mapStyleStack.IsVisible = false; _missionStack.IsVisible = false; _configStack.IsVisible = !_configStack.IsVisible; };
-
-                var bottomTray = new StackLayout
-                {
-                    Spacing = 11,
-                    HorizontalOptions = LayoutOptions.Fill,
-                    Orientation = StackOrientation.Horizontal,
-                    Children = { missionButton, planButton, _MessageLabel, mapStyleButton, configButton }
-                };*/
-
-                var MapPlanstack = new StackLayout { Spacing = 0, Orientation = StackOrientation.Horizontal, VerticalOptions = LayoutOptions.FillAndExpand };
-                MapPlanstack.Children.Add(_map);
-                MapPlanstack.Children.Add(_planStack);
-
-                var stack = new StackLayout { Spacing = 0 };
-
-                var commandBar = new CommandBar();
-
-                stack.Children.Add(new StatusBar(this));
-
-                stack.Children.Add(MapPlanstack);
-                stack.Children.Add(commandBar._mapStyleStack);
-                stack.Children.Add(commandBar._configStack);
-                stack.Children.Add(commandBar._missionStack);
-
-                stack.Children.Add(new CommandBar());
-
-                var layout = new AbsoluteLayout();
-
-                layout.Children.Add(stack);
-                AbsoluteLayout.SetLayoutBounds(stack,
-                    new Rectangle(0, 0, 1, 1));
-                AbsoluteLayout.SetLayoutFlags(stack,
-                    AbsoluteLayoutFlags.All);
-
-                layout.Children.Add(_telemStack);
-                AbsoluteLayout.SetLayoutBounds(_telemStack,
-                    new Rectangle(.01, .9, 250, 200));
-                AbsoluteLayout.SetLayoutFlags(_telemStack,
-                    AbsoluteLayoutFlags.PositionProportional);
-
-                /*layout.Children.Add(_configStack);
-                AbsoluteLayout.SetLayoutBounds(_configStack, 
-                    new Rectangle(.5, .9, 200, 40));
-                AbsoluteLayout.SetLayoutFlags(_configStack, 
-                    AbsoluteLayoutFlags.PositionProportional);
-
-                layout.Children.Add(_missionStack);
-                AbsoluteLayout.SetLayoutBounds(_missionStack, 
-                    new Rectangle(.5, .9, 200, 40));
-                AbsoluteLayout.SetLayoutFlags(_missionStack, 
-                    AbsoluteLayoutFlags.PositionProportional);*/
-
-                Content = layout;
-
-                //ShowCurrentPositionOnMap();
-
-                //TestDropCustomPin();
-
-                //TestDrawPolyline();
-
-                UpdateMessageBox();
-
-                return true;
-            }
-            catch (System.Exception ex)
-            {
-                //logger.DebugLogError("Fatal Error on permissions: " + ex.Message);
-                await App.Current.MainPage.DisplayAlert(
-                    "Error", "Error: " + ex.Message, "Ok");
-                return false;
-            }
-        }
 
         private async Task<bool> ShowMap()
         {
@@ -1061,9 +851,13 @@ namespace TTMobileClient.Views
                 mapStyleSatelliteButton.Clicked += HandleClicked;
 
                 // Config buttons
+                var configLockButton = new Button { Text = "Lock Cursor", BackgroundColor = Color.Gray };
+                var configAddWaypointsButton = new Button { Text = "Add Waypoints", BackgroundColor = Color.Gray };
                 var configSelfLocationButton = new Button { Text = "Set Self Location", BackgroundColor = Color.Gray };
                 var configDroneLocationButton = new Button { Text = "Set Drone Location", BackgroundColor = Color.Gray };
 
+                configLockButton.Clicked += HandleClicked;
+                configAddWaypointsButton.Clicked += HandleClicked;
                 configSelfLocationButton.Clicked += HandleClicked;
                 configDroneLocationButton.Clicked += HandleClicked;
 
@@ -1103,7 +897,8 @@ namespace TTMobileClient.Views
                     Spacing = 10,
                     HorizontalOptions = LayoutOptions.CenterAndExpand,
                     Orientation = StackOrientation.Horizontal,
-                    Children = { configSelfLocationButton, configDroneLocationButton }
+                    Children = { configLockButton, configAddWaypointsButton, 
+                        configSelfLocationButton, configDroneLocationButton }
                 };
 
                 _planStack = new StackLayout
@@ -1160,7 +955,8 @@ namespace TTMobileClient.Views
                 };
                 ImageButton configButton = new ImageButton
                 {
-                    Source = "adjust.png",
+                    //Source = "adjust.png",
+                    Source = "plan.png",
                     HorizontalOptions = LayoutOptions.End,
                     VerticalOptions = LayoutOptions.CenterAndExpand
                 };
@@ -1251,6 +1047,8 @@ namespace TTMobileClient.Views
             }
         }
 
+        private bool _mapReady = false;
+
         //*********************************************************************
         ///
         /// <summary>
@@ -1263,6 +1061,10 @@ namespace TTMobileClient.Views
 
         private void MapOnOnMapReady(object sender, EventArgs e)
         {
+            if (_mapReady)
+                return;
+
+            _mapReady = true;
             Xamarin.Forms.Device.BeginInvokeOnMainThread(ShowCurrentPositionOnMap);
         }
 
@@ -1277,12 +1079,12 @@ namespace TTMobileClient.Views
         private void UpdateMessageBox()
         {
             Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
-                _MessageLabel.Text = 
+                _MessageLabel.Text =
                     $"Connection: {this.ConnectionState.ToString()}, " +
                     $"Mission: {this.MissionState.ToString()}, " +
                     $"UAV: {this.LandedState.ToString()}");
         }
-        
+
         //*********************************************************************
         ///
         /// <summary>
@@ -1295,7 +1097,7 @@ namespace TTMobileClient.Views
 
         private void OnMapClick(object sender, OnMapClickEventArgs e)
         {
-            switch(_mapClickMode)
+            switch (_mapClickMode)
             {
                 case MapClickModeEnum.AddWaypoint:
                     AddWaypoint(e.Lat, e.Lon, e.Alt);
@@ -1332,7 +1134,7 @@ namespace TTMobileClient.Views
         {
             var sensorPos = await Services.Geolocation.GetCurrentPosition();
 
-            SetSelfObject("self", lat, lon, alt, 
+            SetSelfObject("self", lat, lon, alt,
                 sensorPos.Latitude, sensorPos.Longitude, sensorPos.Altitude);
 
             // recenter map
@@ -1426,7 +1228,7 @@ namespace TTMobileClient.Views
         //*********************************************************************
 
         private SelfObject SetSelfObject(string uniqueId,
-            double lat, double lon, double alt, 
+            double lat, double lon, double alt,
             double sensorlat, double sensorlon, double sensorAlt)
         {
             SelfObject to = new SelfObject()
@@ -1439,7 +1241,7 @@ namespace TTMobileClient.Views
                 Url = "http://www.telemething.com/",
                 UniqueId = uniqueId,
                 PositionFromSensor = new Position(sensorlat, sensorlon),
-                PositionOffset = new Position(sensorlat - lat, sensorlon - lon)            
+                PositionOffset = new Position(sensorlat - lat, sensorlon - lon)
             };
 
             _map.SetSelfObject(to);
@@ -1489,6 +1291,12 @@ namespace TTMobileClient.Views
                 case "Clear Mission":
                     Xamarin.Forms.Device.BeginInvokeOnMainThread(ClearMission);
                     break;
+                case "Lock Cursor":
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(LockCursor);
+                    break;
+                case "Add Waypoints":
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(AddWaypoints);
+                    break;
                 case "Set Self Location":
                     Xamarin.Forms.Device.BeginInvokeOnMainThread(SetSelfLocation);
                     break;
@@ -1514,13 +1322,13 @@ namespace TTMobileClient.Views
             {
                 pos = await Services.Geolocation.GetCurrentPosition();
 
-                SetSelfObject("self", 
-                    pos.Latitude, pos.Longitude, pos.Altitude, 
+                SetSelfObject("self",
+                    pos.Latitude, pos.Longitude, pos.Altitude,
                     pos.Latitude, pos.Longitude, pos.Altitude);
 
                 _map.MoveToRegion(MapSpan.FromCenterAndRadius(
                     new Position(pos.Latitude, pos.Longitude), Distance.FromMiles(0.3)));
-           }
+            }
             catch (Exception ex)
             {
                 await App.Current.MainPage.DisplayAlert(
@@ -1564,11 +1372,11 @@ namespace TTMobileClient.Views
                         if (results.ContainsKey(permission))
                             status = results[permission];
 
-                        if (!(status == Plugin.Permissions.Abstractions.PermissionStatus.Granted || 
+                        if (!(status == Plugin.Permissions.Abstractions.PermissionStatus.Granted ||
                             status == Plugin.Permissions.Abstractions.PermissionStatus.Unknown))
                         {
                             await App.Current.MainPage.DisplayAlert(
-                                "Permission Denied", 
+                                "Permission Denied",
                                 "Can not continue, try again.", "OK");
                             permissionsGranted = false;
                             break;
@@ -1630,11 +1438,11 @@ namespace TTMobileClient.Views
             var position = Services.Geolocation.GetCurrentPosition().Result;
 
             if (null != _map) if (null != _map.SelfObject)
-            if (null != _map.SelfObject.PositionOffset)
-            {
-                position.Latitude += _map.SelfObject.PositionOffset.Latitude;
-                position.Longitude += _map.SelfObject.PositionOffset.Longitude;
-            }
+                    if (null != _map.SelfObject.PositionOffset)
+                    {
+                        position.Latitude += _map.SelfObject.PositionOffset.Latitude;
+                        position.Longitude += _map.SelfObject.PositionOffset.Longitude;
+                    }
 
             return position;
         }
@@ -1773,9 +1581,9 @@ namespace TTMobileClient.Views
 
         private async void ConnectToMav()
         {
-            if( null == _rosClient)
-                _rosClient = new RosClientLib.RosClient(TestUri, 
-                    OnConnected, OnConnectionFailed );
+            if (null == _rosClient)
+                _rosClient = new RosClientLib.RosClient(TestUri,
+                    OnConnected, OnConnectionFailed);
         }
 
         //*********************************************************************
@@ -1838,20 +1646,20 @@ namespace TTMobileClient.Views
             waypoints.StartNewMission();
 
             // take off from home
-            waypoints.AddWaypoint(Mavros.Command.NAV_TAKEOFF, 
-                _missionStatus.x_lat, _missionStatus.y_long, 10, 
+            waypoints.AddWaypoint(Mavros.Command.NAV_TAKEOFF,
+                _missionStatus.x_lat, _missionStatus.y_long, 10,
                 true, true, 5, 0, 0, 0);
 
             // travel to each waypoint
             foreach (var routeCoord in _map.Waypoints)
-                if(routeCoord.IsActive)
+                if (routeCoord.IsActive)
                     waypoints.AddWaypoint(Mavros.Command.NAV_WAYPOINT,
-                        routeCoord.Position.Latitude, routeCoord.Position.Longitude, 30, 
+                        routeCoord.Position.Latitude, routeCoord.Position.Longitude, 30,
                         false, true, 5, 0, 0, 0);
 
             // return home and land
             waypoints.AddWaypoint(Mavros.Command.NAV_LAND,
-                _missionStatus.x_lat, _missionStatus.y_long, 0, false, 
+                _missionStatus.x_lat, _missionStatus.y_long, 0, false,
                 true, 5, 0, 0, 0);
 
             // send the mission to ROS
@@ -1903,6 +1711,30 @@ namespace TTMobileClient.Views
                 });
         }
 
+        
+
+        //*********************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        //*********************************************************************
+
+        private async void LockCursor()
+        {
+            _mapClickMode = MapClickModeEnum.Locked;
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        //*********************************************************************
+
+        private async void AddWaypoints()
+        {
+            _mapClickMode = MapClickModeEnum.AddWaypoint;
+        }
+
         //*********************************************************************
         /// <summary>
         /// 
@@ -1947,7 +1779,7 @@ namespace TTMobileClient.Views
         private async void ClearMission()
         {
             // we cant clear a mission which is underway
-            if (this.MissionState == MissionStateEnum.Starting | 
+            if (this.MissionState == MissionStateEnum.Starting |
                 this.MissionState == MissionStateEnum.Underway)
                 return;
 
@@ -1966,7 +1798,7 @@ namespace TTMobileClient.Views
 
         private async void StartTelemetry()
         {
-            if(this.ConnectionState != ConnectionStateEnum.Connected)
+            if (this.ConnectionState != ConnectionStateEnum.Connected)
                 this.ConnectionState = ConnectionStateEnum.Connecting;
 
             _moveMapToTrackedObject = true;
@@ -2042,7 +1874,7 @@ namespace TTMobileClient.Views
                     SetLandedState(missionStatus.landed_state);
 
                     ShowTrackedObjectLocation(
-                        missionStatus.x_lat, missionStatus.y_long, 2); 
+                        missionStatus.x_lat, missionStatus.y_long, 2);
                 });
         }
 
@@ -2090,7 +1922,7 @@ namespace TTMobileClient.Views
                 else
                 {
                     _singleTrackedObject.Position = position;
-                    _map.Change = new ChangeHappened(_singleTrackedObject, 
+                    _map.Change = new ChangeHappened(_singleTrackedObject,
                         ChangeHappened.ChangeTypeEnum.Changed);
                 }
 

@@ -208,6 +208,8 @@ namespace TTMobileClient.Droid
             }
         }
 
+        int onMapReadyCount = 0;
+
         //*********************************************************************
         ///
         /// <summary>
@@ -220,6 +222,9 @@ namespace TTMobileClient.Droid
         protected override void OnMapReady(GoogleMap map)
         {
             base.OnMapReady(map);
+
+            //if (!(++onMapReadyCount == 2))
+            //    return;
 
             NativeMap.MapClick += NativeMapOnMapClick;
             NativeMap.InfoWindowClick += OnInfoWindowClick;
