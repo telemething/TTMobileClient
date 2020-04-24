@@ -799,8 +799,11 @@ namespace TTMobileClient.Views
 
         private async Task<bool> ShowMap()
         {
-            if (!await GetPermissions(new List<Permission>()
-                { Permission.Location, Permission.LocationWhenInUse }))
+            //if (!await GetPermissions(new List<Permission>()
+            //    { Permission.Location, Permission.LocationWhenInUse }))
+            //    return false;
+
+            if (!await GetPermissions())
                 return false;
 
             try
@@ -1344,12 +1347,45 @@ namespace TTMobileClient.Views
         /// <summary>
         /// Request permissions from the OS 
         /// </summary>
-        /// <param name="permissionsList"></param>
         /// <returns></returns>
         /// 
         //*********************************************************************
 
-        private async Task<bool> GetPermissions(List<Permission> permissionsList)
+        private async Task<bool> GetPermissions()
+        {
+            bool permissionsGranted = true;
+            var status = Plugin.Permissions.Abstractions.PermissionStatus.Unknown;
+
+            try
+            {
+                status = await CrossPermissions.Current.CheckPermissionStatusAsync<LocationPermission>();
+
+                if (status != Plugin.Permissions.Abstractions.PermissionStatus.Granted)
+                {
+                    status = await CrossPermissions.Current.RequestPermissionAsync<LocationPermission>();
+                    await DisplayAlert("Permission Request", "Location: " + status.ToString(), "OK");
+                }
+
+                status = await CrossPermissions.Current.CheckPermissionStatusAsync<LocationWhenInUsePermission>();
+
+                if (status != Plugin.Permissions.Abstractions.PermissionStatus.Granted)
+                {
+                    status = await CrossPermissions.Current.RequestPermissionAsync<LocationWhenInUsePermission>();
+                    await DisplayAlert("Permission Request", "Location When In Use: " + status.ToString(), "OK");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                await App.Current.MainPage.DisplayAlert(
+                    "Error", "Error: " + ex.Message, "Ok");
+                //logger.DebugLogError("Fatal Error on permissions: " + ex.Message);
+            }
+
+            return permissionsGranted;
+        }
+
+
+        private async Task<bool> GetPermissionsOld(List<Permission> permissionsList)
         {
             bool permissionsGranted = true;
             try
