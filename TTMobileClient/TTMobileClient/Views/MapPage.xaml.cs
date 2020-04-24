@@ -49,7 +49,6 @@ namespace TTMobileClient.Views
     public class StatusBar : StackLayout
     {
         Page _parentPage = null;
-
         private enum RosConnectionStatusEnum { unknown, gotAdvertisedUrl, connecting, connected, disconected, error }
         private RosConnectionStatusEnum _rosConnectionStatus = RosConnectionStatusEnum.unknown;
         string _rosBridgeServerUrlAdvertised = "";
@@ -595,6 +594,8 @@ namespace TTMobileClient.Views
         {
             _missionCtrl = new MissionCtrl();
             InitializeComponent();
+
+            //DisplayActionSheet("ActionSheet: Send to?", "Cancel", null, "Email", "Twitter", "Facebook");
         }
 
         //*********************************************************************
