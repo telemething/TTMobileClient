@@ -48,17 +48,22 @@ namespace TTMobileClient.Views
 
     public class StatusBar : StackLayout
     {
-        Page _parentPage = null;
+        MapPage _parentPage = null;
 
-        private enum RosConnectionStatusEnum { unknown, gotAdvertisedUrl, connecting, connected, disconected, error }
-        private RosConnectionStatusEnum _rosConnectionStatus = RosConnectionStatusEnum.unknown;
+        private enum RosConnectionStatusEnum { unknown, gotAdvertisedUrl, 
+            connecting, connected, disconected, error }
+        private RosConnectionStatusEnum _rosConnectionStatus = 
+            RosConnectionStatusEnum.unknown;
         string _rosBridgeServerUrlAdvertised = "";
 
-        private enum PerifConnectionStatusEnum { unknown, connecting, connected, disconected, error }
-        private PerifConnectionStatusEnum _perifConnectionStatus = PerifConnectionStatusEnum.unknown;
+        private enum PerifConnectionStatusEnum { unknown, connecting, 
+            connected, disconected, error }
+        private PerifConnectionStatusEnum _perifConnectionStatus = 
+            PerifConnectionStatusEnum.unknown;
 
         RosClient.ConnectEventArgs _rosClientConnectEventArgs = null;
-        TTMobileClient.Services.ApiService.ApiEventArgs _perifConnectionEventArgs = null;
+        TTMobileClient.Services.ApiService.ApiEventArgs 
+            _perifConnectionEventArgs = null;
 
         Button perifConnectionButton = new Button
         { Text = "Perif", BackgroundColor = Color.LightGray };
@@ -66,12 +71,22 @@ namespace TTMobileClient.Views
         Button rosConnectionButton = new Button
         { Text = "ROS", BackgroundColor = Color.LightGray };
 
+        public class PerfConnectionUserActions
+        {
+            public const string Connect = "Connect";
+            public const string Disconnect = "Disconnect";
+            public const string Reconnect = "Reconnect";
+            public const string Block = "Block";
+            public const string Unknown = "Unknown";
+            public const string Cancel = "Cancel";
+        }
+
         //*********************************************************************
         /// <summary>
         /// 
         /// </summary>
         //*********************************************************************
-        public StatusBar(Page parentPage)
+        public StatusBar(MapPage parentPage)
         {
             Spacing = 10;
             HorizontalOptions = LayoutOptions.Fill;
@@ -114,20 +129,12 @@ namespace TTMobileClient.Views
                             _rosConnectionStatus = RosConnectionStatusEnum.gotAdvertisedUrl;
                             _rosBridgeServerUrlAdvertised = networkService.URL;
                             rosConnectionButton.BackgroundColor = Color.LightBlue;
+                            if(null != _parentPage)
+                                _parentPage.RosBridgeUri = networkService.URL;
                         }
                         break;
                 }
             }
-        }
-
-        public class PerfConnectionUserActions
-        {
-            public const string Connect = "Connect";
-            public const string Disconnect = "Disconnect";
-            public const string Reconnect = "Reconnect";
-            public const string Block = "Block";
-            public const string Unknown = "Unknown";
-            public const string Cancel = "Cancel";
         }
 
         //*********************************************************************
@@ -295,7 +302,9 @@ namespace TTMobileClient.Views
                     //TODO
                     break;
                 case PerfConnectionUserActions.Connect:
-                    //TODO
+                    if (null != _parentPage)
+                        Device.BeginInvokeOnMainThread(
+                            _parentPage.StartTelemetry);
                     break;
                 case PerfConnectionUserActions.Disconnect:
                     //TODO
@@ -379,7 +388,7 @@ namespace TTMobileClient.Views
         };
         ImageButton configButton = new ImageButton
         {
-            Source = "adjust.png",
+            Source = "cog.png",
             HorizontalOptions = LayoutOptions.End,
             VerticalOptions = LayoutOptions.CenterAndExpand
         };
@@ -511,11 +520,11 @@ namespace TTMobileClient.Views
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class MapPage : ContentPage
     {
-        string TestUri = AppSettings.DefaultRobotRosbridgeUrl;
+        #region private 
+
+        string _rosBridgeUri = AppSettings.DefaultRobotRosbridgeUrl;
         private double TestLat = AppSettings.DefaultGeoCoordsLat;
         private double TestLong = AppSettings.DefaultGeoCoordsLon;
-
-        #region private 
 
         private bool _initialized = false;
         private int _heartbeatPeriodSeconds = AppSettings.HeartbeatPeriodSeconds;
@@ -586,6 +595,12 @@ namespace TTMobileClient.Views
         private readonly Geodesic _geo = Geodesic.WGS84;
         private bool _moveMapToTrackedObject = true;
         private TrackedObject _singleTrackedObject;
+
+        #endregion
+
+        #region public
+
+        public string RosBridgeUri { set; get; }
 
         #endregion
 
@@ -959,7 +974,7 @@ namespace TTMobileClient.Views
                 ImageButton configButton = new ImageButton
                 {
                     //Source = "adjust.png",
-                    Source = "plan.png",
+                    Source = "cog.png",
                     HorizontalOptions = LayoutOptions.End,
                     VerticalOptions = LayoutOptions.CenterAndExpand
                 };
@@ -1618,7 +1633,7 @@ namespace TTMobileClient.Views
         private async void ConnectToMav()
         {
             if (null == _rosClient)
-                _rosClient = new RosClientLib.RosClient(TestUri,
+                _rosClient = new RosClientLib.RosClient(_rosBridgeUri,
                     OnConnected, OnConnectionFailed);
         }
 
@@ -1832,7 +1847,7 @@ namespace TTMobileClient.Views
         /// </summary>
         //*********************************************************************
 
-        private async void StartTelemetry()
+        public async void StartTelemetry()
         {
             if (this.ConnectionState != ConnectionStateEnum.Connected)
                 this.ConnectionState = ConnectionStateEnum.Connecting;
