@@ -108,8 +108,13 @@
   <ItemGroup>
     <Content Include="cog.png" />
     <Content Include="Assets\TT150x150Logo..png" />
+    <Content Include="CursorMode.png" />
+    <Content Include="DroneConnection.png" />
+    <Content Include="HololensConnection.png" />
     <Content Include="info.png" />
+    <Content Include="MapLayers.png" />
     <Content Include="monkey.png" />
+    <Content Include="Path.png" />
     <Content Include="self.png" />
     <Content Include="pin.png" />
     <Content Include="adjust.png" />

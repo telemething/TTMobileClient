@@ -9,13 +9,29 @@ namespace TTMobileClient
 {
     public class MissionCtrl
     {
-        Xamarin.Forms.ListView lVliew;
+        Xamarin.Forms.CollectionView cView;
 
         public MissionCtrl()
         {
-            lVliew = new ListView();
+            cView = new CollectionView();
+            AddFakeData();
         }
 
-        public Xamarin.Forms.View viewCtrl => lVliew;
+        public Xamarin.Forms.View viewCtrl => cView;
+        
+        private void AddFakeData()
+        {
+            cView.ItemsSource = new string[]
+            {
+                "Baboon",
+                "Capuchin Monkey",
+                "Blue Monkey",
+                "Squirrel Monkey",
+                "Golden Lion Tamarin",
+                "Howler Monkey",
+                "Japanese Macaque"
+            };
+        }
     }
+
 }

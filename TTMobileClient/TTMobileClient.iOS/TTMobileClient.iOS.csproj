@@ -215,5 +215,56 @@
   <ItemGroup>
     <BundleResource Include="Resources\cog%403x.png" />
   </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\MapLayers.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\MapLayers%402x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\MapLayers%403x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\Path.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\Path%402x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\Path%403x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\CursorMode.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\CursorMode%402x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\CursorMode%403x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\Mission%402x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\Mission%403x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\DroneConnection.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\DroneConnection%402x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\DroneConnection%403x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\HololensConnection.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\HololensConnection%402x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\HololensConnection%403x.png" />
+  </ItemGroup>
   <Import Project="..\..\OpenGLDemo\OpenGLDemo.projitems" Label="Shared" />
 </Project>

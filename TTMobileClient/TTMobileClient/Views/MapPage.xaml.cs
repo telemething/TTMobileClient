@@ -65,11 +65,28 @@ namespace TTMobileClient.Views
         TTMobileClient.Services.ApiService.ApiEventArgs 
             _perifConnectionEventArgs = null;
 
-        Button perifConnectionButton = new Button
-        { Text = "Perif", BackgroundColor = Color.LightGray };
+        //Button perifConnectionButton = new Button
+        //{ Text = "Perif", BackgroundColor = Color.LightGray };
 
-        Button rosConnectionButton = new Button
-        { Text = "ROS", BackgroundColor = Color.LightGray };
+        //Button rosConnectionButton = new Button
+        //{ Text = "ROS", BackgroundColor = Color.LightGray };
+
+        ImageButton perifConnectionButton = new ImageButton
+        {
+            Source = "HololensConnection.png",
+            HorizontalOptions = LayoutOptions.Start,
+            VerticalOptions = LayoutOptions.Center,
+            BackgroundColor = Color.LightGray
+        };
+
+        ImageButton rosConnectionButton = new ImageButton
+        {
+            Source = "DroneConnection.png",
+            HorizontalOptions = LayoutOptions.Start,
+            VerticalOptions = LayoutOptions.Center,
+            BackgroundColor = Color.LightGray
+        };
+
 
         public class PerfConnectionUserActions
         {
@@ -963,26 +980,30 @@ namespace TTMobileClient.Views
                 {
                     Source = "mission.png",
                     HorizontalOptions = LayoutOptions.Start,
-                    VerticalOptions = LayoutOptions.CenterAndExpand
+                    VerticalOptions = LayoutOptions.CenterAndExpand,
+                    BackgroundColor = Color.White
                 };
                 ImageButton planButton = new ImageButton
                 {
-                    Source = "plan.png",
+                    Source = "Path.png",
                     HorizontalOptions = LayoutOptions.Start,
-                    VerticalOptions = LayoutOptions.Center,
+                    VerticalOptions = LayoutOptions.CenterAndExpand,
+                    BackgroundColor = Color.White
                 };
                 ImageButton configButton = new ImageButton
                 {
                     //Source = "adjust.png",
-                    Source = "cog.png",
+                    Source = "CursorMode.png",
                     HorizontalOptions = LayoutOptions.End,
-                    VerticalOptions = LayoutOptions.CenterAndExpand
+                    VerticalOptions = LayoutOptions.CenterAndExpand,
+                    BackgroundColor = Color.White
                 };
                 ImageButton mapStyleButton = new ImageButton
                 {
-                    Source = "view.png",
+                    Source = "MapLayers.png",
                     HorizontalOptions = LayoutOptions.End,
-                    VerticalOptions = LayoutOptions.CenterAndExpand
+                    VerticalOptions = LayoutOptions.CenterAndExpand,
+                    BackgroundColor = Color.White
                 };
 
 
