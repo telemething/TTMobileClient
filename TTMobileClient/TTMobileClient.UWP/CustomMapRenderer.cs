@@ -267,7 +267,7 @@ namespace TTMobileClient.UWP
             var mapIcon = new MapIcon
             {
                 Image = RandomAccessStreamReference.CreateFromUri(
-                    new Uri("ms-appx:///pin.png")),
+                    new Uri("ms-appx:///RoutePin.png")),
                 CollisionBehaviorDesired =
                     MapElementCollisionBehavior.RemainVisible,
                 Location = snPoint,
@@ -346,7 +346,7 @@ namespace TTMobileClient.UWP
 
                     var mapIcon = new MapIcon();
                     mapIcon.Image = RandomAccessStreamReference.
-                        CreateFromUri(new Uri("ms-appx:///pin.png"));
+                        CreateFromUri(new Uri("ms-appx:///RoutePin.png"));
                     mapIcon.CollisionBehaviorDesired = 
                         MapElementCollisionBehavior.RemainVisible;
                     mapIcon.Location = snPoint;

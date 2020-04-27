@@ -60,7 +60,7 @@ namespace TTMobileClient
                 SwipeItem favoriteSwipeItem = new SwipeItem
                 {
                     Text = "Favorite",
-                    IconImageSource = "pin.png",
+                    IconImageSource = "RoutePin.png",
                     BackgroundColor = Color.LightGreen
                 };
                 favoriteSwipeItem.Invoked += OnFavoriteSwipeItemInvoked;
@@ -68,7 +68,7 @@ namespace TTMobileClient
                 SwipeItem deleteSwipeItem = new SwipeItem
                 {
                     Text = "Delete",
-                    IconImageSource = "pin.png",
+                    IconImageSource = "RoutePin.png",
                     BackgroundColor = Color.LightPink
                 };
                 deleteSwipeItem.Invoked += OnDeleteSwipeItemInvoked;

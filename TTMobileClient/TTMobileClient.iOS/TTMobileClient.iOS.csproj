@@ -266,5 +266,14 @@
   <ItemGroup>
     <BundleResource Include="Resources\HololensConnection%403x.png" />
   </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\RoutePin.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\RoutePin%402x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\RoutePin%403x.png" />
+  </ItemGroup>
   <Import Project="..\..\OpenGLDemo\OpenGLDemo.projitems" Label="Shared" />
 </Project>

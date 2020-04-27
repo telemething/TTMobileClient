@@ -383,7 +383,7 @@ namespace TTMobileClient.iOS
                 {
                     annotationView = new CustomMKAnnotationView(annotation, waypoint.MarkerId.ToString())
                     {
-                        Image = UIImage.FromFile("pin.png"),
+                        Image = UIImage.FromFile("RoutePin.png"),
                         CalloutOffset = new CGPoint(0, 0),
                         LeftCalloutAccessoryView = new UIImageView(UIImage.FromFile("monkey.png")),
                         RightCalloutAccessoryView = UIButton.FromType(UIButtonType.DetailDisclosure)
@@ -449,7 +449,7 @@ namespace TTMobileClient.iOS
             {
                 annotationView = new CustomMKAnnotationView(annotation, customPin.Id.ToString())
                 {
-                    Image = UIImage.FromFile("pin.png"),
+                    Image = UIImage.FromFile("RoutePin.png"),
                     CalloutOffset = new CGPoint(0, 0),
                     LeftCalloutAccessoryView = new UIImageView(UIImage.FromFile("monkey.png")),
                     RightCalloutAccessoryView = UIButton.FromType(UIButtonType.DetailDisclosure)

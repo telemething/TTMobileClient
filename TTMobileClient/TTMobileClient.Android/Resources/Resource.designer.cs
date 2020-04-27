@@ -12097,25 +12097,28 @@ namespace TTMobileClient.Droid
 			public const int plan = 2131165530;
 			
 			// aapt resource value: 0x7F07015B
-			public const int self = 2131165531;
+			public const int RoutePin = 2131165531;
 			
 			// aapt resource value: 0x7F07015C
-			public const int tooltip_frame_dark = 2131165532;
+			public const int self = 2131165532;
 			
 			// aapt resource value: 0x7F07015D
-			public const int tooltip_frame_light = 2131165533;
+			public const int tooltip_frame_dark = 2131165533;
 			
 			// aapt resource value: 0x7F07015E
-			public const int uav = 2131165534;
+			public const int tooltip_frame_light = 2131165534;
 			
 			// aapt resource value: 0x7F07015F
-			public const int view = 2131165535;
+			public const int uav = 2131165535;
 			
 			// aapt resource value: 0x7F070160
-			public const int xamarin = 2131165536;
+			public const int view = 2131165536;
 			
 			// aapt resource value: 0x7F070161
-			public const int xamarin_logo = 2131165537;
+			public const int xamarin = 2131165537;
+			
+			// aapt resource value: 0x7F070162
+			public const int xamarin_logo = 2131165538;
 			
 			static Drawable()
 			{

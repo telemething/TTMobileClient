@@ -115,6 +115,7 @@
     <Content Include="MapLayers.png" />
     <Content Include="monkey.png" />
     <Content Include="Path.png" />
+    <Content Include="RoutePin.png" />
     <Content Include="self.png" />
     <Content Include="pin.png" />
     <Content Include="adjust.png" />
