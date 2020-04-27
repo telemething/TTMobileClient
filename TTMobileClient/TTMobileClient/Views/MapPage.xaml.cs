@@ -1209,7 +1209,7 @@ namespace TTMobileClient.Views
 
         private void AddWaypoint(double lat, double lon, double alt)
         {
-            _map.AddWaypoint(new Waypoint
+            var wayPoint = new Waypoint
             {
                 Type = PinType.Place,
                 Position = new Position(lat, lon),
@@ -1218,7 +1218,12 @@ namespace TTMobileClient.Views
                 Id = "Waypoint",
                 Url = "http://www.telemething.com/",
                 IsActive = true
-            });
+            };
+
+            _map.AddWaypoint(wayPoint);
+
+            Xamarin.Forms.Device.BeginInvokeOnMainThread(
+                () => _missionCtrl.AddWaypoint(wayPoint));
         }
 
         //*********************************************************************
