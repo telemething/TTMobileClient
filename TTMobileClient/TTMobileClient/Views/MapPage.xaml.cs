@@ -145,6 +145,7 @@ namespace TTMobileClient.Views
                         {
                             _rosConnectionStatus = RosConnectionStatusEnum.gotAdvertisedUrl;
                             _rosBridgeServerUrlAdvertised = networkService.URL;
+                            _parentPage._rosBridgeUri = networkService.URL;
                             rosConnectionButton.BackgroundColor = Color.LightBlue;
                             if(null != _parentPage)
                                 _parentPage.RosBridgeUri = networkService.URL;
@@ -321,7 +322,7 @@ namespace TTMobileClient.Views
                 case PerfConnectionUserActions.Connect:
                     if (null != _parentPage)
                         Device.BeginInvokeOnMainThread(
-                            _parentPage.StartTelemetry);
+                            () =>_parentPage.StartTelemetry(_rosBridgeServerUrlAdvertised));
                     break;
                 case PerfConnectionUserActions.Disconnect:
                     //TODO
@@ -539,7 +540,7 @@ namespace TTMobileClient.Views
     {
         #region private 
 
-        string _rosBridgeUri = AppSettings.DefaultRobotRosbridgeUrl;
+        public string _rosBridgeUri = AppSettings.DefaultRobotRosbridgeUrl;
         private double TestLat = AppSettings.DefaultGeoCoordsLat;
         private double TestLong = AppSettings.DefaultGeoCoordsLon;
 
@@ -1321,7 +1322,7 @@ namespace TTMobileClient.Views
                     _map.MapType = MapType.Satellite;
                     break;
                 case "Connect":
-                    Xamarin.Forms.Device.BeginInvokeOnMainThread(StartTelemetry);
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(() => StartTelemetry(_rosBridgeUri));
                     break;
                 case "Send Mission":
                     Xamarin.Forms.Device.BeginInvokeOnMainThread(SendMission);
@@ -1651,15 +1652,19 @@ namespace TTMobileClient.Views
         //*********************************************************************
         ///
         /// <summary>
-        /// 
+        /// Connect to a mavlink source
         /// </summary>
+        /// <param name="rosBridgeUri">mavlink server uri</param>
         ///
         //*********************************************************************
 
-        private async void ConnectToMav()
+        private async void ConnectToMav(string rosBridgeUri)
         {
+            if (null == rosBridgeUri)
+                rosBridgeUri = _rosBridgeUri;
+
             if (null == _rosClient)
-                _rosClient = new RosClientLib.RosClient(_rosBridgeUri,
+                _rosClient = new RosClientLib.RosClient(rosBridgeUri,
                     OnConnected, OnConnectionFailed);
         }
 
@@ -1740,7 +1745,7 @@ namespace TTMobileClient.Views
                 true, 5, 0, 0, 0);
 
             // send the mission to ROS
-            ConnectToMav();
+            ConnectToMav(_rosBridgeUri);
             _rosClient.CallService<Waypoints.WaypointReqResp>(waypoints,
                 resp => {
                     if (resp.success)
@@ -1770,7 +1775,7 @@ namespace TTMobileClient.Views
         {
             this.MissionState = MissionStateEnum.Starting;
 
-            ConnectToMav();
+            ConnectToMav(_rosBridgeUri);
             _rosClient.CallService<StartMission.StartMissionReqResp>(new StartMission(),
                 resp => {
                     if (resp.success)
@@ -1871,16 +1876,17 @@ namespace TTMobileClient.Views
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="rosBridgeUri">ROS bridge server uri</param>
         //*********************************************************************
 
-        public async void StartTelemetry()
+        public async void StartTelemetry(string rosBridgeUri)
         {
             if (this.ConnectionState != ConnectionStateEnum.Connected)
                 this.ConnectionState = ConnectionStateEnum.Connecting;
 
             _moveMapToTrackedObject = true;
 
-            ConnectToMav();
+            ConnectToMav(rosBridgeUri);
 
             var subscriptionId = _rosClient.Subscribe
                 <RosSharp.RosBridgeClient.Messages.Test.MissionStatus>(
