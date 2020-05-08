@@ -146,7 +146,8 @@ namespace TTMobileClient.Views
                             _rosConnectionStatus = RosConnectionStatusEnum.gotAdvertisedUrl;
                             _rosBridgeServerUrlAdvertised = networkService.URL;
                             _parentPage._rosBridgeUri = networkService.URL;
-                            rosConnectionButton.BackgroundColor = Color.LightBlue;
+                            Device.BeginInvokeOnMainThread( () =>
+                                rosConnectionButton.BackgroundColor = Color.LightBlue);
                             if(null != _parentPage)
                                 _parentPage.RosBridgeUri = networkService.URL;
                         }
@@ -1195,6 +1196,22 @@ namespace TTMobileClient.Views
 
         private void SetDronePosition(double lat, double lon, double alt)
         {
+            //leave if we dont have a drone
+            if (null == _singleTrackedObject)
+                return;
+
+            //calculate offset
+            _singleTrackedObject.PositionOffset = new Position(
+                lat - _singleTrackedObject.PositionFromSensor.Latitude, 
+                lon - _singleTrackedObject.PositionFromSensor.Longitude);
+
+            //update object position
+            _singleTrackedObject.Position = new Position(lat,lon);
+
+            //tell map to move it now (to make UI more responsive)
+            _map.Change = new ChangeHappened(_singleTrackedObject,
+                ChangeHappened.ChangeTypeEnum.Changed);
+
         }
 
         //*********************************************************************
@@ -1997,13 +2014,27 @@ namespace TTMobileClient.Views
                 _lastLat = lat;
                 _lastLon = lon;
 
+                var positionFromSensor = new Position(lat, lon); 
+
+                if (null != _singleTrackedObject)
+                if (null != _singleTrackedObject.PositionOffset)
+                {
+                    lat += _singleTrackedObject.PositionOffset.Latitude;
+                    lon += _singleTrackedObject.PositionOffset.Longitude;
+                }
+
                 var position = new Position(lat, lon); // Latitude, Longitude
 
                 if (null == _singleTrackedObject)
+                {
                     _singleTrackedObject = AddTrackedObject(
                         "singleTrackedObject", lat, lon, 0);
+                    _singleTrackedObject.PositionFromSensor =
+                        positionFromSensor;
+                }
                 else
                 {
+                    _singleTrackedObject.PositionFromSensor = positionFromSensor;
                     _singleTrackedObject.Position = position;
                     _map.Change = new ChangeHappened(_singleTrackedObject,
                         ChangeHappened.ChangeTypeEnum.Changed);

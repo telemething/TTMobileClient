@@ -28,6 +28,9 @@ namespace TTMobileClient
         public string Name { get; set; }
         public object Tag { get; set; }
         public object nativeMapElement { get; set; }
+        public Position PositionFromSensor { get; set; }
+        public Position PositionOffset { get; set; }
+
     }
 
     public class SelfObject : Pin
