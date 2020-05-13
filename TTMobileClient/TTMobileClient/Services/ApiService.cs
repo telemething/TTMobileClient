@@ -16,6 +16,10 @@ namespace TTMobileClient.Services
             "Settings.RegisterRemoteSettings";
         public static string Settings_ChangeSettings { get; } =
             "Settings.ChangeSettings";
+        public static string Geo_FetchImageTile { get; } =
+            "Geo.FetchImageTile";
+        public static string Geo_FetchElevationTile { get; } =
+            "Geo.FetchElevationTile";
     }
 
     //*************************************************************************

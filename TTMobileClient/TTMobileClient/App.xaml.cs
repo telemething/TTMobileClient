@@ -18,6 +18,7 @@ namespace TTMobileClient
 
         TTMobileClient.Services.ApiService _was = null;
         TTMobileClient.AppSettings _appSettings = null;
+        TTMobileClient.GeoTileService _geoTileService = null;
         AdvertiseServices _as = null;
 
         //*********************************************************************
@@ -55,6 +56,12 @@ namespace TTMobileClient
             //we start the AppSettings here so that it registers a callback with
             //the API service, listening for requests from remote devices
             _appSettings = new AppSettings();
+
+            //we start the GeoTileService here so that it registers a callback with
+            //the API service, listening for requests from remote devices
+            _geoTileService = new GeoTileService();
+
+            _geoTileService.FetchTest();
 
             //we start the advertising service, informing remote devices of the
             //services we offer

@@ -29,6 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Source\TileServerLib\TileServerLib\TileServerLib.csproj" />
     <ProjectReference Include="..\..\..\Source\TileServerLib\WebServerLib.csproj" />
     <ProjectReference Include="..\..\..\Source\TThingComm\TThingCommLib\TThingCommLib.csproj" />
     <ProjectReference Include="..\..\..\Source\WebServerLib\WebServerLib.csproj" />
