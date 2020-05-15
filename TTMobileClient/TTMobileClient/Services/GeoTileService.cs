@@ -89,6 +89,7 @@ namespace TTMobileClient
         public GeoTileService()
         {
             //Set the directory for tile caching
+            //https://docs.microsoft.com/en-us/xamarin/xamarin-forms/data-cloud/data/files?tabs=windows
             TileServerLib.TileCache.AppDataPath =
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
@@ -103,6 +104,13 @@ namespace TTMobileClient
 
             _was.AddApiMethod(WebApiMethodNames.Geo_FetchElevationTile,
                 GeoFetchElevationTile);
+
+            AdvertiseServices.Singleton.AddServiceToAdvertise(
+                new TThingComLib.Messages.NetworkService(
+                    $"ws://{AdvertiseServices.Singleton.FetchIpAddress()}:8877/wsapi",
+                    TThingComLib.Messages.NetworkTypeEnum.WsAPI, 
+                    TThingComLib.Messages.ServiceTypeEnum.GeoTile, 
+                    TThingComLib.Messages.ServiceRoleEnum.Server));
         }
 
         //*************************************************************************

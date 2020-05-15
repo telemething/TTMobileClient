@@ -27,6 +27,7 @@ namespace TTMobileClient
         private bool _sendSelfTelem = true;
         private bool _initialized = false;
         private string _address;
+        List<TThingComLib.Messages.NetworkService> _serviceList = new List<NetworkService>();
 
         private static AdvertiseServices _singleton = null;
 
@@ -118,7 +119,7 @@ namespace TTMobileClient
         /// </summary>
         //*********************************************************************
 
-        private string FetchIpAddress()
+        public string FetchIpAddress()
         {
             try
             {
@@ -160,21 +161,13 @@ namespace TTMobileClient
 
         //*********************************************************************
         /// <summary>
-        /// Build the list of available services
+        /// 
         /// </summary>
+        /// <param name="service"></param>
         //*********************************************************************
-
-        private List<TThingComLib.Messages.NetworkService> BuildServiceList()
+        public void AddServiceToAdvertise(TThingComLib.Messages.NetworkService service)
         {
-            var serviceList = new List<TThingComLib.Messages.NetworkService>();
-
-            serviceList.Add(new NetworkService($"ws://{_address}:8877/wsapi",
-                NetworkTypeEnum.WsAPI, ServiceTypeEnum.Config, ServiceRoleEnum.Server));
-
-            serviceList.Add(new NetworkService($"http://{_address}:8080/tiles",
-                NetworkTypeEnum.UDP, ServiceTypeEnum.GeoTile, ServiceRoleEnum.Server));
-
-            return serviceList;
+            _serviceList.Add(service);
         }
 
         //*********************************************************************
@@ -194,7 +187,8 @@ namespace TTMobileClient
                 _telemetryRepeater?.Send(new TThingComLib.Messages.Message(
                     TThingComLib.Messages.MessageTypeEnum.Config, "GroundStation", "*")
                 {
-                    NetworkServices = BuildServiceList()
+                    //NetworkServices = BuildServiceList()
+                    NetworkServices = _serviceList
                 }, false); 
             }
             catch (Exception e)

@@ -80,6 +80,13 @@ namespace TTMobileClient
             _was = TTMobileClient.Services.ApiService.Singleton;
             _was.AddApiMethod(WebApiMethodNames.Settings_RegisterRemoteSettings, 
                 SettingsRegisterRemoteSettings);
+
+            AdvertiseServices.Singleton.AddServiceToAdvertise(
+                new TThingComLib.Messages.NetworkService(
+                    $"ws://{AdvertiseServices.Singleton.FetchIpAddress()}:8877/wsapi",
+                    TThingComLib.Messages.NetworkTypeEnum.WsAPI,
+                    TThingComLib.Messages.ServiceTypeEnum.Config,
+                    TThingComLib.Messages.ServiceRoleEnum.Server));
         }
 
         //*************************************************************************
