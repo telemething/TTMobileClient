@@ -123,6 +123,39 @@ namespace TTMobileClient.UWP
                             break;
                     }
             }
+
+            if (e.PropertyName.Equals("GeoTileList"))
+            {
+                if (null != formsMap._geoTileList)
+                foreach (var geoTile in formsMap._geoTileList)
+                {
+                    var bbox = geoTile.BoundingBox();
+
+                    var ringCoords = new List<BasicGeoposition>
+                    {
+                        new BasicGeoposition()
+                            { Latitude = bbox.NW.Lat, Longitude = bbox.NW.Lon },
+                        new BasicGeoposition()
+                            { Latitude = bbox.NE.Lat, Longitude = bbox.NE.Lon },
+                        new BasicGeoposition()
+                            { Latitude = bbox.SE.Lat, Longitude = bbox.SE.Lon },
+                        new BasicGeoposition()
+                            { Latitude = bbox.SW.Lat, Longitude = bbox.SW.Lon }
+                    };
+
+                    var ringPolygon = new MapPolygon
+                    {
+                        //ringPolygon.FillColor = Windows.UI.Colors.LightGray;
+                        FillColor = Windows.UI.Color.FromArgb(100, 80, 80, 80),
+                        //ringPolygon.StrokeColor = Windows.UI.Colors.LightPink;
+                        StrokeColor = Windows.UI.Color.FromArgb(100, 255, 192, 203),
+                        StrokeThickness = 1,
+                        Path = new Geopath(ringCoords)
+                    };
+
+                    nativeMap.MapElements.Add(ringPolygon);
+                }
+            }
         }
 
         //*********************************************************************

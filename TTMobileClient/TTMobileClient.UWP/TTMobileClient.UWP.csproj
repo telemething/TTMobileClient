@@ -193,6 +193,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Source\TileServerLib\TileServerLib\TileServerLib.csproj">
+      <Project>{a591e2c4-29d4-403a-ae43-2ac10add951d}</Project>
+      <Name>TileServerLib</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\FaaUasLib\FaaUasLib.csproj">
       <Project>{fd06a0d9-05c5-4884-ad23-ae3595cf14a0}</Project>
       <Name>FaaUasLib</Name>

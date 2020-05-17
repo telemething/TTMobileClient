@@ -24,6 +24,7 @@ using Xamarin.Forms.Internals;
 using Xamarin.Forms.Maps;
 using Xamarin.Forms.Xaml;
 using StartMission = RosClientLib.StartMission;
+using TileServerLib;
 
 
 /*namespace TTMobileClient.Views
@@ -529,7 +530,7 @@ namespace TTMobileClient.Views
     public enum MissionStateEnum { Unknown, None, Sending, Sent, Starting, Underway, Failed, Completed }
     public enum LandedStateEnum { Unknown, Grounded, Liftoff, Flying, Landing, Failed }
     public enum ConnectionStateEnum { Unknown, NotConnected, Connecting, Connected, Failed, Dropped }
-    public enum MapClickModeEnum { Unknown, SetSelfPosition, SetDronePosition, AddWaypoint, Locked }
+    public enum MapClickModeEnum { Unknown, SetSelfPosition, SetDronePosition, AddWaypoint, PrefetchSetCenter, Locked }
 
     //*************************************************************************
     /// <summary>
@@ -540,6 +541,22 @@ namespace TTMobileClient.Views
     public partial class MapPage : ContentPage
     {
         #region private 
+        private class PrefetchStatus
+        {
+            public int TotalTileCount = 0;
+            public int TotalFetchedOrFailed = 0;
+            public int ImageSuccessCount = 0;
+            public int ImageFailureCount = 0;
+            public int ElevationSuccessCount = 0;
+            public int ElevationFailureCount = 0;
+            public int MapSuccessCount = 0;
+            public int MapFailureCount = 0;
+        }
+
+        private PrefetchStatus _prefetchStatus = new PrefetchStatus();
+        private WorldCoordinate _prefetchCenter = null;
+        private int _prefetchEdgeCount = 12;
+        private int _prefetchZoom = 12;
 
         public string _rosBridgeUri = AppSettings.DefaultRobotRosbridgeUrl;
         private double TestLat = AppSettings.DefaultGeoCoordsLat;
@@ -596,14 +613,20 @@ namespace TTMobileClient.Views
         }
 
         private Label _MessageLabel = new Label();
+        private Label _ToolsLabel = new Label();
+
+        private ProgressBar _progressBar = new ProgressBar 
+            { ProgressColor = Color.Yellow, Progress = 0.0f };
+        private uint _progressBarAnimationTime = 1000;
 
         private Label _StatusLatLabel;
         private Label _StatusLongLabel;
         private Label _StatusAltLabel;
         private Label _StatusLandedLabel;
 
+        private StackLayout _toolsStack;
         private StackLayout _mapStyleStack;
-        private StackLayout _configStack;
+        private StackLayout _mouseModeStack;
         private StackLayout _planStack;
         private StackLayout _missionStack;
         private StackLayout _telemStack;
@@ -887,16 +910,16 @@ namespace TTMobileClient.Views
                 mapStyleHybridButton.Clicked += HandleClicked;
                 mapStyleSatelliteButton.Clicked += HandleClicked;
 
-                // Config buttons
-                var configLockButton = new Button { Text = "Lock Cursor", BackgroundColor = Color.Gray };
-                var configAddWaypointsButton = new Button { Text = "Add Waypoints", BackgroundColor = Color.Gray };
-                var configSelfLocationButton = new Button { Text = "Set Self Location", BackgroundColor = Color.Gray };
-                var configDroneLocationButton = new Button { Text = "Set Drone Location", BackgroundColor = Color.Gray };
+                // Mousemode buttons
+                var mouseModeLockButton = new Button { Text = "Lock Cursor", BackgroundColor = Color.Gray };
+                var mouseModeAddWaypointsButton = new Button { Text = "Add Waypoints", BackgroundColor = Color.Gray };
+                var mouseModeSelfLocationButton = new Button { Text = "Set Self Location", BackgroundColor = Color.Gray };
+                var mouseModeDroneLocationButton = new Button { Text = "Set Drone Location", BackgroundColor = Color.Gray };
 
-                configLockButton.Clicked += HandleClicked;
-                configAddWaypointsButton.Clicked += HandleClicked;
-                configSelfLocationButton.Clicked += HandleClicked;
-                configDroneLocationButton.Clicked += HandleClicked;
+                mouseModeLockButton.Clicked += HandleClicked;
+                mouseModeAddWaypointsButton.Clicked += HandleClicked;
+                mouseModeSelfLocationButton.Clicked += HandleClicked;
+                mouseModeDroneLocationButton.Clicked += HandleClicked;
 
                 // Mission buttons
                 var missionConnectButton = new Button { Text = "Connect", BackgroundColor = Color.Gray };
@@ -910,6 +933,13 @@ namespace TTMobileClient.Views
                 missionStartMissionButton.Clicked += HandleClicked;
                 missionEndMissionButton.Clicked += HandleClicked;
                 missionClearMissionButton.Clicked += HandleClicked;
+
+                // Tools buttons
+                var preFetchMapSelectBoundariesButton = new Button { Text = "Select Center", BackgroundColor = Color.Gray };
+                var preFetchMapFetchButton = new Button { Text = "Fetch Map", BackgroundColor = Color.Gray };
+
+                preFetchMapSelectBoundariesButton.Clicked += HandleClicked;
+                preFetchMapFetchButton.Clicked += HandleClicked;
 
                 // Coordinates Display
                 _StatusLatLabel = new Label { Text = "---", TextColor = Color.Red, FontSize = 20 };
@@ -928,14 +958,14 @@ namespace TTMobileClient.Views
                         mapStyleSatelliteButton }
                 };
 
-                _configStack = new StackLayout
+                _mouseModeStack = new StackLayout
                 {
                     IsVisible = false,
                     Spacing = 10,
                     HorizontalOptions = LayoutOptions.CenterAndExpand,
                     Orientation = StackOrientation.Horizontal,
-                    Children = { configLockButton, configAddWaypointsButton, 
-                        configSelfLocationButton, configDroneLocationButton }
+                    Children = { mouseModeLockButton, mouseModeAddWaypointsButton, 
+                        mouseModeSelfLocationButton, mouseModeDroneLocationButton }
                 };
 
                 _planStack = new StackLayout
@@ -968,15 +998,28 @@ namespace TTMobileClient.Views
                     Children = { _StatusLatLabel, _StatusLongLabel, _StatusAltLabel }
                 };
 
+                _toolsStack = new StackLayout
+                {
+                    IsVisible = false,
+                    Spacing = 10,
+                    HorizontalOptions = LayoutOptions.CenterAndExpand,
+                    Orientation = StackOrientation.Horizontal,
+                    Children = { preFetchMapSelectBoundariesButton, preFetchMapFetchButton, _ToolsLabel }
+                };
+
                 // Bottom Tray
 
                 _MessageLabel = new Label
                 {
                     Text = "Hi",
-                    //TextColor = Color.Red,
-                    //FontSize = 30,
                     HorizontalOptions = LayoutOptions.CenterAndExpand
                 };
+
+                /*_ToolsLabel = new Label
+                {
+                    Text = "---",
+                    HorizontalOptions = LayoutOptions.CenterAndExpand
+                };*/
 
                 ImageButton missionButton = new ImageButton
                 {
@@ -992,7 +1035,7 @@ namespace TTMobileClient.Views
                     VerticalOptions = LayoutOptions.CenterAndExpand,
                     BackgroundColor = Color.White
                 };
-                ImageButton configButton = new ImageButton
+                ImageButton mousemodeButton = new ImageButton
                 {
                     //Source = "adjust.png",
                     Source = "CursorMode.png",
@@ -1007,23 +1050,31 @@ namespace TTMobileClient.Views
                     VerticalOptions = LayoutOptions.CenterAndExpand,
                     BackgroundColor = Color.White
                 };
-
+                ImageButton toolsButton = new ImageButton
+                {
+                    Source = "cog.png",
+                    HorizontalOptions = LayoutOptions.Start,
+                    VerticalOptions = LayoutOptions.CenterAndExpand,
+                    BackgroundColor = Color.White
+                };
 
                 missionButton.Clicked += (sender, args) =>
-                { _mapStyleStack.IsVisible = false; _missionStack.IsVisible = !_missionStack.IsVisible; _configStack.IsVisible = false; };
+                { _mapStyleStack.IsVisible = false; _missionStack.IsVisible = !_missionStack.IsVisible; _mouseModeStack.IsVisible = false; _toolsStack.IsVisible = false; };
                 planButton.Clicked += (sender, args) =>
-                { /*_configStack.IsVisible = false; _missionStack.IsVisible = false;*/ _planStack.IsVisible = !_planStack.IsVisible; };
+                { _planStack.IsVisible = !_planStack.IsVisible; };
                 mapStyleButton.Clicked += (sender, args) =>
-                { _missionStack.IsVisible = false; _mapStyleStack.IsVisible = !_mapStyleStack.IsVisible; _configStack.IsVisible = false; };
-                configButton.Clicked += (sender, args) =>
-                { _mapStyleStack.IsVisible = false; _missionStack.IsVisible = false; _configStack.IsVisible = !_configStack.IsVisible; };
+                { _missionStack.IsVisible = false; _mapStyleStack.IsVisible = !_mapStyleStack.IsVisible; _mouseModeStack.IsVisible = false; _toolsStack.IsVisible = false; };
+                mousemodeButton.Clicked += (sender, args) =>
+                { _mapStyleStack.IsVisible = false; _missionStack.IsVisible = false; _mouseModeStack.IsVisible = !_mouseModeStack.IsVisible; _toolsStack.IsVisible = false; };
+                toolsButton.Clicked += (sender, args) =>
+                { _mapStyleStack.IsVisible = false; _missionStack.IsVisible = false; _mouseModeStack.IsVisible = false; _toolsStack.IsVisible = !_toolsStack.IsVisible; };
 
                 var bottomTray = new StackLayout
                 {
                     Spacing = 11,
                     HorizontalOptions = LayoutOptions.Fill,
                     Orientation = StackOrientation.Horizontal,
-                    Children = { missionButton, planButton, _MessageLabel, mapStyleButton, configButton }
+                    Children = { missionButton, planButton, _MessageLabel, mapStyleButton, mousemodeButton, toolsButton }
                 };
 
                 var MapPlanstack = new StackLayout { Spacing = 0, Orientation = StackOrientation.Horizontal, VerticalOptions = LayoutOptions.FillAndExpand };
@@ -1033,11 +1084,12 @@ namespace TTMobileClient.Views
                 var stack = new StackLayout { Spacing = 0 };
 
                 stack.Children.Add(new StatusBar(this));
-
                 stack.Children.Add(MapPlanstack);
+                stack.Children.Add(_progressBar);
                 stack.Children.Add(_mapStyleStack);
-                stack.Children.Add(_configStack);
+                stack.Children.Add(_mouseModeStack);
                 stack.Children.Add(_missionStack);
+                stack.Children.Add(_toolsStack);
 
                 stack.Children.Add(bottomTray);
 
@@ -1110,11 +1162,9 @@ namespace TTMobileClient.Views
         }
 
         //*********************************************************************
-        ///
         /// <summary>
         /// 
         /// </summary>
-        ///
         //*********************************************************************
 
         private void UpdateMessageBox()
@@ -1127,13 +1177,11 @@ namespace TTMobileClient.Views
         }
 
         //*********************************************************************
-        ///
         /// <summary>
         /// 
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        ///
         //*********************************************************************
 
         private void OnMapClick(object sender, OnMapClickEventArgs e)
@@ -1154,6 +1202,9 @@ namespace TTMobileClient.Views
                     SetDronePosition(e.Lat, e.Lon, e.Alt);
                     _mapClickMode = MapClickModeEnum.AddWaypoint; //TODO
                     break;
+                case MapClickModeEnum.PrefetchSetCenter:
+                    PrefetchSetCenter(e.Lat, e.Lon, e.Alt);
+                    break;
                 case MapClickModeEnum.Unknown:
                     return;
                     break;
@@ -1161,14 +1212,12 @@ namespace TTMobileClient.Views
         }
 
         //*********************************************************************
-        ///
         /// <summary>
         /// 
         /// </summary>
         /// <param name="lat"></param>
         /// <param name="lon"></param>
         /// <param name="alt"></param>
-        ///
         //*********************************************************************
 
         private async void SetSelfPosition(double lat, double lon, double alt)
@@ -1184,14 +1233,12 @@ namespace TTMobileClient.Views
         }
 
         //*********************************************************************
-        ///
         /// <summary>
         /// 
         /// </summary>
         /// <param name="lat"></param>
         /// <param name="lon"></param>
         /// <param name="alt"></param>
-        ///
         //*********************************************************************
 
         private void SetDronePosition(double lat, double lon, double alt)
@@ -1211,18 +1258,121 @@ namespace TTMobileClient.Views
             //tell map to move it now (to make UI more responsive)
             _map.Change = new ChangeHappened(_singleTrackedObject,
                 ChangeHappened.ChangeTypeEnum.Changed);
-
         }
 
         //*********************************************************************
-        ///
+        /// <summary>
+        /// Set a center for tile fetch, show the tile boundaries on the map
+        /// </summary>
+        /// <param name="lat"></param>
+        /// <param name="lon"></param>
+        /// <param name="alt"></param>
+        //*********************************************************************
+        private async void PrefetchSetCenter(double lat, double lon, double alt)
+        {
+            _prefetchStatus = new PrefetchStatus
+            {
+                TotalTileCount =
+                (int)Math.Pow(_prefetchEdgeCount + ((_prefetchEdgeCount % 2 == 0) ? 1 : 0), 2)
+            };
+
+            _prefetchCenter = new WorldCoordinate() 
+                { Lat = (float)lat, Lon = (float)lon };
+
+            GeoTileService gts = new GeoTileService();
+
+            _map.GeoTileList = gts.FetchTileInfo(
+                (float)lat, (float)lon, _prefetchZoom, _prefetchEdgeCount);
+
+            _map.Change = new ChangeHappened(_map.GeoTileList,
+                ChangeHappened.ChangeTypeEnum.Changed);
+
+            Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
+                _ToolsLabel.Text =
+                    $"Tile Count: {_prefetchStatus.TotalTileCount.ToString()}");
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// Prefetch the tiles selected in PrefetchSetCenter()
+        /// </summary>
+        //*********************************************************************
+        private async void PreFetchFetchMap()
+        {
+            _mapClickMode = MapClickModeEnum.Locked;
+
+            GeoTileService gts = new GeoTileService();
+
+            await gts.PreFetchMap(_prefetchCenter.Lat, _prefetchCenter.Lon,
+                _prefetchZoom, _prefetchEdgeCount, 
+                (fetchStatus) => PrefetchStatusUpdate(fetchStatus));
+
+            _map.Change = new ChangeHappened(_map.GeoTileList,
+                ChangeHappened.ChangeTypeEnum.Changed);
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// Show a running update of map tile fetch
+        /// </summary>
+        /// <param name="statusUpdate"></param>
+        //*********************************************************************
+        private void PrefetchStatusUpdate(TileServerLib.FetchStatus statusUpdate)
+        {
+            switch (statusUpdate.DataType)
+            {
+                case TileServerLib.FetchStatus.DataTypeEnum.Elevation:
+                    if (statusUpdate.Result == TileServerLib.FetchStatus.ResultEnum.Success)
+                        _prefetchStatus.ElevationSuccessCount++;
+                    else
+                        _prefetchStatus.ElevationFailureCount++;
+                    break;
+                case TileServerLib.FetchStatus.DataTypeEnum.Image:
+                    if (statusUpdate.Result == TileServerLib.FetchStatus.ResultEnum.Success)
+                        _prefetchStatus.ImageSuccessCount++;
+                    else
+                        _prefetchStatus.ImageFailureCount++;
+                    break;
+                case TileServerLib.FetchStatus.DataTypeEnum.Map:
+                    if (statusUpdate.Result == TileServerLib.FetchStatus.ResultEnum.Success)
+                        _prefetchStatus.MapSuccessCount++;
+                    else
+                        _prefetchStatus.MapFailureCount++;
+                    break;
+            }
+
+            _prefetchStatus.TotalFetchedOrFailed++;
+            _progressBar.ProgressTo(
+                _prefetchStatus.TotalFetchedOrFailed / (2 * _prefetchStatus.TotalTileCount), 
+                _progressBarAnimationTime, Easing.SinOut);
+
+            //All done
+            if(_prefetchStatus.TotalFetchedOrFailed == (2 * _prefetchStatus.TotalTileCount))
+            {
+                if (0 < (_prefetchStatus.ImageFailureCount + _prefetchStatus.ElevationFailureCount))
+                    _progressBar.ProgressColor = Color.Red;
+                else
+                    _progressBar.ProgressColor = Color.Green;
+            }
+            else
+                _progressBar.ProgressColor = Color.Yellow;
+
+            Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
+                _ToolsLabel.Text =
+                    $"Tile Count: {_prefetchStatus.TotalTileCount.ToString()}, " +
+                    $"Image OK: {_prefetchStatus.ImageSuccessCount.ToString()}, " +
+                    $"Image Fail: {_prefetchStatus.ImageFailureCount.ToString()}, " +
+                    $"Ele OK: {_prefetchStatus.ElevationSuccessCount.ToString()}, " +
+                    $"Ele Fail: {_prefetchStatus.ElevationFailureCount.ToString()}");
+        }
+
+        //*********************************************************************
         /// <summary>
         /// 
         /// </summary>
         /// <param name="lat"></param>
         /// <param name="lon"></param>
         /// <param name="alt"></param>
-        ///
         //*********************************************************************
 
         private void AddWaypoint(double lat, double lon, double alt)
@@ -1245,7 +1395,6 @@ namespace TTMobileClient.Views
         }
 
         //*********************************************************************
-        ///
         /// <summary>
         /// 
         /// </summary>
@@ -1254,7 +1403,6 @@ namespace TTMobileClient.Views
         /// <param name="lon"></param>
         /// <param name="alt"></param>
         /// <returns></returns>
-        ///
         //*********************************************************************
 
         private TrackedObject AddTrackedObject(string uniqueId,
@@ -1277,7 +1425,6 @@ namespace TTMobileClient.Views
         }
 
         //*********************************************************************
-        ///
         /// <summary>
         /// 
         /// </summary>
@@ -1286,7 +1433,6 @@ namespace TTMobileClient.Views
         /// <param name="lon"></param>
         /// <param name="alt"></param>
         /// <returns></returns>
-        ///
         //*********************************************************************
 
         private SelfObject SetSelfObject(string uniqueId,
@@ -1312,13 +1458,11 @@ namespace TTMobileClient.Views
         }
 
         //*********************************************************************
-        ///
         /// <summary>
         /// 
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        ///
         //*********************************************************************
 
         void HandleClicked(object sender, EventArgs e)
@@ -1365,15 +1509,20 @@ namespace TTMobileClient.Views
                 case "Set Drone Location":
                     Xamarin.Forms.Device.BeginInvokeOnMainThread(SetDroneLocation);
                     break;
+
+                case "Select Center":
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(PreFetchSetCenter);
+                    break;
+                case "Fetch Map":
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(PreFetchFetchMap);
+                    break;
             }
         }
 
         //*********************************************************************
-        ///
         /// <summary>
         /// 
         /// </summary>
-        ///
         //*********************************************************************
 
         private async void ShowCurrentPositionOnMap()
@@ -1402,12 +1551,10 @@ namespace TTMobileClient.Views
         }
 
         //*********************************************************************
-        ///
         /// <summary>
         /// Request permissions from the OS 
         /// </summary>
         /// <returns></returns>
-        /// 
         //*********************************************************************
 
         private async Task<bool> GetPermissions()
@@ -1493,11 +1640,9 @@ namespace TTMobileClient.Views
         Timer _wsApiTestTimer;
 
         //*********************************************************************
-        ///
         /// <summary>
         /// 
         /// </summary>
-        ///
         //*********************************************************************
 
         private void StartHeartbeatTimer()
@@ -1854,6 +1999,17 @@ namespace TTMobileClient.Views
         private async void SetDroneLocation()
         {
             _mapClickMode = MapClickModeEnum.SetDronePosition;
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        //*********************************************************************
+
+        private async void PreFetchSetCenter()
+        {
+            _mapClickMode = MapClickModeEnum.PrefetchSetCenter;
         }
 
         //*********************************************************************

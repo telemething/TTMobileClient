@@ -60,8 +60,9 @@ namespace TTMobileClient
             //we start the GeoTileService here so that it registers a callback with
             //the API service, listening for requests from remote devices
             _geoTileService = new GeoTileService();
+            _geoTileService.StartServer();
 
-            _geoTileService.FetchTest();
+            //_geoTileService.FetchTest();
 
             //we start the advertising service, informing remote devices of the
             //services we offer

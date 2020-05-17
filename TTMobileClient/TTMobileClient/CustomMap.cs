@@ -21,6 +21,13 @@ namespace TTMobileClient
         public bool IsActive { get; set; }
     }
 
+    public class Poipoint : Pin
+    {
+        public string Url { get; set; }
+        public object Tag { get; set; }
+        public bool IsActive { get; set; }
+    }
+
     public class TrackedObject : Pin
     {
         public string UniqueId;
@@ -102,9 +109,18 @@ namespace TTMobileClient
 
         //*********************
 
+        public List<TileServerLib.TileInfo> _geoTileList { get; set; }
+
+        public List<TileServerLib.TileInfo> GeoTileList 
+        {
+            get { return _geoTileList; }
+            set { _geoTileList = value; OnPropertyChanged(); }
+        }
+
         public ChangeHappened change;
         public List<Position> routeCoordinates;
         private List<Waypoint> _Waypoints;
+        private List<Poipoint> _Poipoints;
         private List<TrackedObject> _TrackedObjects;
         private SelfObject _SelfObject;
 
@@ -118,6 +134,12 @@ namespace TTMobileClient
         {
             get { return _Waypoints; }
             set { _Waypoints = value; OnPropertyChanged(); }
+        }
+
+        public List<Poipoint> Poipoints
+        {
+            get { return _Poipoints; }
+            set { _Poipoints = value; OnPropertyChanged(); }
         }
 
         public List<TrackedObject> TrackedObjects
@@ -141,8 +163,22 @@ namespace TTMobileClient
        public CustomMap(MapSpan region) : base(region)
        {
            TrackedObjects = new List<TrackedObject>();
-           Waypoints = new List<Waypoint>();
-           routeCoordinates = new List<Position>();
+            Waypoints = new List<Waypoint>();
+            Poipoints = new List<Poipoint>();
+            routeCoordinates = new List<Position>();
+       }
+
+       public void AddPoipoint(Poipoint poipoint)
+       {
+           _Poipoints.Add(poipoint);
+           //waypoint.MarkerClicked
+           Change = new ChangeHappened(poipoint, ChangeHappened.ChangeTypeEnum.Added);
+       }
+
+       public void RemovePoipoint(Poipoint poipoint)
+       {
+           Change = new ChangeHappened(poipoint, ChangeHappened.ChangeTypeEnum.Removed);
+           _Poipoints.Remove(poipoint);
        }
 
        public void AddWaypoint(Waypoint waypoint)

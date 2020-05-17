@@ -95,7 +95,15 @@ namespace TTMobileClient
 
             //Set the Bing map service acccess key
             _bingAccessKey = AppSettings.BingMapAccessKey;
+        }
 
+        //*********************************************************************
+        /// <summary>
+        /// Start the service on WebApi
+        /// </summary>
+        //*********************************************************************
+        public void StartServer()
+        {
             _was = TTMobileClient.Services.ApiService.Singleton;
 
             //register the API callbacks
@@ -108,8 +116,8 @@ namespace TTMobileClient
             AdvertiseServices.Singleton.AddServiceToAdvertise(
                 new TThingComLib.Messages.NetworkService(
                     $"ws://{AdvertiseServices.Singleton.FetchIpAddress()}:8877/wsapi",
-                    TThingComLib.Messages.NetworkTypeEnum.WsAPI, 
-                    TThingComLib.Messages.ServiceTypeEnum.GeoTile, 
+                    TThingComLib.Messages.NetworkTypeEnum.WsAPI,
+                    TThingComLib.Messages.ServiceTypeEnum.GeoTile,
                     TThingComLib.Messages.ServiceRoleEnum.Server));
         }
 
@@ -202,6 +210,104 @@ namespace TTMobileClient
             catch (Exception ex)
             {
                 message = ex.Message;
+                throw;
+            }
+        }
+
+        public List<TileServerLib.MapTile> MapTiles => _mapTiles;
+        private List<TileServerLib.MapTile> _mapTiles;
+
+        public List<TileServerLib.TileInfo> TileInfos
+        { 
+            get 
+            {
+                var til = new List<TileServerLib.TileInfo>();
+                foreach(var mt in _mapTiles)
+                    til.Add(mt.TileData);
+                return til;
+            } 
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// Fetch elevation and image tiles for an area given zoom, size, and
+        /// center coords. All tile data is stored in local cache, making this
+        /// useful for prefetch for later field use. The callback is invoked
+        /// once for each tile success or failure.
+        /// </summary>
+        /// <param name="Latitude"></param>
+        /// <param name="Longitude"></param>
+        /// <param name="ZoomLevel"></param>
+        /// <param name="MapSize"></param>
+        //*********************************************************************
+        public async Task<TileServerLib.FetchStatus> PreFetchMap(
+            float Latitude, float Longitude, int ZoomLevel,
+            int MapSize, Action<TileServerLib.FetchStatus> callback)
+        {
+            _successfulfetchCount = 0;
+            _failedfetchCount = 0;
+
+            try
+            {
+                TileServerLib.MapBuilder mb =
+                    new TileServerLib.MapBuilder(_bingAccessKey);
+                //mb.Test1();
+
+                mb.GetMapData(Latitude, Longitude,
+                    ZoomLevel, MapSize, callback,
+                    TileServerLib.MapBuilder.FetchTypeEnum.ImageAndElevation);
+
+                _mapTiles = mb.MapTiles;
+
+                return new TileServerLib.FetchStatus(
+                    TileServerLib.FetchStatus.DataTypeEnum.Map,
+                    TileServerLib.FetchStatus.ResultEnum.Success);
+            }
+            catch (Exception ex)
+            {
+                return new TileServerLib.FetchStatus(
+                    TileServerLib.FetchStatus.DataTypeEnum.Map,
+                    TileServerLib.FetchStatus.ResultEnum.Failure,
+                    null, ex.Message);
+
+                //var messageDialog = new MessageDialog(ex.Message);
+                //messageDialog.ShowAsync();
+            }
+        }
+
+        //*********************************************************************
+        /// <summary>
+        /// Generate tile info without fetching GIS data, useful for displaying
+        /// tile boundaries prior to fetching.
+        /// </summary>
+        /// <param name="Latitude"></param>
+        /// <param name="Longitude"></param>
+        /// <param name="ZoomLevel"></param>
+        /// <param name="MapSize"></param>
+        /// <returns></returns>
+        //*********************************************************************
+        public List<TileServerLib.TileInfo> FetchTileInfo(
+            float Latitude, float Longitude, int ZoomLevel,
+            int MapSize)
+        {
+            _successfulfetchCount = 0;
+            _failedfetchCount = 0;
+
+            try
+            {
+                TileServerLib.MapBuilder mb =
+                    new TileServerLib.MapBuilder(_bingAccessKey);
+
+                mb.GetMapData(Latitude, Longitude,
+                    ZoomLevel, MapSize, null, 
+                    TileServerLib.MapBuilder.FetchTypeEnum.JustTileInfo);
+
+                _mapTiles = mb.MapTiles;
+
+                return TileInfos;
+            }
+            catch (Exception ex)
+            {
                 throw;
             }
         }
