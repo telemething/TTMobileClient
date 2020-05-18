@@ -8,12 +8,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
+using Xamarin.Forms;
 using Xamarin.Forms.Maps;
 
 namespace TTMobileClient
 {
+    //*************************************************************************
+    /// <summary>
+    /// 
+    /// </summary>
+    //*************************************************************************
     public class Waypoint : Pin
     {
         public string Url { get; set; }
@@ -21,6 +25,11 @@ namespace TTMobileClient
         public bool IsActive { get; set; }
     }
 
+    //*************************************************************************
+    /// <summary>
+    /// 
+    /// </summary>
+    //*************************************************************************
     public class Poipoint : Pin
     {
         public string Url { get; set; }
@@ -28,6 +37,11 @@ namespace TTMobileClient
         public bool IsActive { get; set; }
     }
 
+    //*************************************************************************
+    /// <summary>
+    /// 
+    /// </summary>
+    //*************************************************************************
     public class TrackedObject : Pin
     {
         public string UniqueId;
@@ -40,6 +54,11 @@ namespace TTMobileClient
 
     }
 
+    //*************************************************************************
+    /// <summary>
+    /// 
+    /// </summary>
+    //*************************************************************************
     public class SelfObject : Pin
     {
         public string UniqueId;
@@ -51,6 +70,11 @@ namespace TTMobileClient
         public Position PositionOffset { get; set; }
     }
 
+    //*************************************************************************
+    /// <summary>
+    /// 
+    /// </summary>
+    //*************************************************************************
     public class OnMapClickEventArgs : EventArgs
     {
         private double _lat;
@@ -83,6 +107,11 @@ namespace TTMobileClient
         }
     }
 
+    //*************************************************************************
+    /// <summary>
+    /// 
+    /// </summary>
+    //*************************************************************************
     public class ChangeHappened
     {
         public enum ChangeTypeEnum { None, Added, Changed, Removed }
@@ -97,10 +126,19 @@ namespace TTMobileClient
         }
     }
 
+    //*************************************************************************
+    /// <summary>
+    /// 
+    /// </summary>
+    //*************************************************************************
     public class CustomMap : Map
     {
         public event EventHandler<OnMapClickEventArgs> OnMapClick;
         public event EventHandler OnMapReady;
+
+        public Color FillColor = Color.FromRgba(80, 80, 80, 100);
+        public Color StrokeColor = Color.FromRgba(255, 192, 203, 100);
+        public float StrokeWidth = 1;
 
         //*********************
         public List<Position> ShapeCoordinates { get; set; }
@@ -114,7 +152,10 @@ namespace TTMobileClient
         public List<TileServerLib.TileInfo> GeoTileList 
         {
             get { return _geoTileList; }
-            set { _geoTileList = value; OnPropertyChanged(); }
+            set { _geoTileList = value;
+                DrawGeoTiles(value, FillColor, StrokeColor, StrokeWidth);
+                //OnPropertyChanged(); 
+            }
         }
 
         public ChangeHappened change;
@@ -239,5 +280,126 @@ namespace TTMobileClient
            OnMapClick?.Invoke(this,
                new OnMapClickEventArgs(lat, lon, 0));
        }
+
+
+        private List<Polygon> _geoTilePolygonList = null;
+
+        /// *******************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="geoTileList"></param>
+        /// <param name="fillColor"></param>
+        /// <param name="strokeColor"></param>
+        /// <param name="strokeWidth"></param>
+        /// *******************************************************************
+        private void DrawGeoTiles(List<TileServerLib.TileInfo> geoTileList,
+            Color fillColor, Color strokeColor, float strokeWidth)
+        {
+            if (null == geoTileList)
+            {
+                if(null != _geoTilePolygonList)
+                    foreach (var poly in _geoTilePolygonList)
+                        this.MapElements.Remove(poly);
+
+                return;
+            }
+
+            _geoTilePolygonList = GeoTile2Polygon(geoTileList,
+                fillColor, strokeColor, strokeWidth);
+
+            foreach (var poly in _geoTilePolygonList)
+                this.MapElements.Add(poly);
+        }
+
+        /// *******************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="geoTileList"></param>
+        /// <param name="fillColor"></param>
+        /// <param name="strokeColor"></param>
+        /// <param name="strokeWidth"></param>
+        /// <returns></returns>
+        /// *******************************************************************
+        private List<Polygon> GeoTile2Polygon(List<TileServerLib.TileInfo> geoTileList,
+            Color fillColor, Color strokeColor, float strokeWidth)
+        {
+            if (null == geoTileList)
+                return null;
+
+            var polyList = new List<Polygon>(geoTileList.Count);
+
+            foreach (var geoTile in geoTileList)
+                polyList.Add(GeoTile2Polygon(geoTile,
+                    fillColor, strokeColor, strokeWidth));
+
+            return polyList;
+        }
+
+        /// *******************************************************************
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="geoTile"></param>
+        /// <param name="fillColor"></param>
+        /// <param name="strokeColor"></param>
+        /// <param name="strokeWidth"></param>
+        /// <returns></returns>
+        /// *******************************************************************
+        private Polygon GeoTile2Polygon(TileServerLib.TileInfo geoTile, 
+            Color fillColor, Color strokeColor, float strokeWidth)
+        {
+            var bbox = geoTile.BoundingBox();
+
+            return new Polygon
+            {
+                StrokeColor = StrokeColor,
+                StrokeWidth = strokeWidth,
+                FillColor = fillColor,
+                Geopath =
+                {
+                    new Position(bbox.NW.Lat, bbox.NW.Lon),
+                    new Position(bbox.NE.Lat, bbox.NE.Lon),
+                    new Position(bbox.SE.Lat, bbox.SE.Lon),
+                    new Position(bbox.SW.Lat, bbox.SW.Lon)
+                }
+            };
+        }
+
+        Polygon msWest;
+
+        /// *******************************************************************
+        /// <summary>
+        /// simple static test
+        /// </summary>
+        /// *******************************************************************
+        public void TestPologon()
+        {
+
+            msWest = new Polygon
+            {
+                StrokeColor = Color.FromHex("#FF9900"),
+                StrokeWidth = 8,
+                FillColor = Color.FromHex("#88FF9900"),
+                Geopath =
+                {
+                    new Position(47.6458676, -122.1356007),
+                    new Position(47.6458097, -122.142789),
+                    new Position(47.6367593, -122.1428104),
+                    new Position(47.6368027, -122.1398707),
+                    new Position(47.6380172, -122.1376177),
+                    new Position(47.640663, -122.1352359),
+                    new Position(47.6426148, -122.1347209),
+                    new Position(47.6458676, -122.1356007)
+                }
+            };
+
+            if (!this.MapElements.Contains(msWest))
+            {
+                this.MapElements.Add(msWest);
+            }
+
+        }
     }
 }

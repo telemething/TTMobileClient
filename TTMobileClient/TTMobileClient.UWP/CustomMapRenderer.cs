@@ -124,7 +124,7 @@ namespace TTMobileClient.UWP
                     }
             }
 
-            if (e.PropertyName.Equals("GeoTileList"))
+            /*if (e.PropertyName.Equals("GeoTileList"))
             {
                 if (null != formsMap._geoTileList)
                 foreach (var geoTile in formsMap._geoTileList)
@@ -155,7 +155,7 @@ namespace TTMobileClient.UWP
 
                     nativeMap.MapElements.Add(ringPolygon);
                 }
-            }
+            }*/
         }
 
         //*********************************************************************

@@ -555,7 +555,7 @@ namespace TTMobileClient.Views
 
         private PrefetchStatus _prefetchStatus = new PrefetchStatus();
         private WorldCoordinate _prefetchCenter = null;
-        private int _prefetchEdgeCount = 12;
+        private int _prefetchEdgeCount = 6;
         private int _prefetchZoom = 12;
 
         public string _rosBridgeUri = AppSettings.DefaultRobotRosbridgeUrl;
@@ -1129,6 +1129,8 @@ namespace TTMobileClient.Views
 
                 UpdateMessageBox();
 
+                //_map.TestPologon();
+
                 return true;
             }
             catch (System.Exception ex)
@@ -1284,9 +1286,6 @@ namespace TTMobileClient.Views
             _map.GeoTileList = gts.FetchTileInfo(
                 (float)lat, (float)lon, _prefetchZoom, _prefetchEdgeCount);
 
-            _map.Change = new ChangeHappened(_map.GeoTileList,
-                ChangeHappened.ChangeTypeEnum.Changed);
-
             Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
                 _ToolsLabel.Text =
                     $"Tile Count: {_prefetchStatus.TotalTileCount.ToString()}");
@@ -1307,8 +1306,8 @@ namespace TTMobileClient.Views
                 _prefetchZoom, _prefetchEdgeCount, 
                 (fetchStatus) => PrefetchStatusUpdate(fetchStatus));
 
-            _map.Change = new ChangeHappened(_map.GeoTileList,
-                ChangeHappened.ChangeTypeEnum.Changed);
+            //remove the tile polys from the map 
+            _map.GeoTileList = null;
         }
 
         //*********************************************************************
