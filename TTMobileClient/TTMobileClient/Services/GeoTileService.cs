@@ -137,7 +137,7 @@ namespace TTMobileClient
             data.Wait();
 
             return new List<WebApiLib.Argument>()
-                { new WebApiLib.Argument("Image",data.Result) };
+                { new WebApiLib.Argument("ImageB64", Convert.ToBase64String(data.Result))};
         }
 
         //*************************************************************************
