@@ -155,8 +155,16 @@ namespace TTMobileClient
 
             data.Wait();
 
-            return new List<WebApiLib.Argument>() 
-                { new WebApiLib.Argument("Elevation", data.Result) };
+            var retlist = new List<WebApiLib.Argument>();
+
+            var arg = new WebApiLib.Argument("Elevation", data.Result);
+
+            retlist.Add(arg);
+
+            return retlist;
+
+            //return new List<WebApiLib.Argument>() 
+            //    { new WebApiLib.Argument("Elevation", data.Result) };
         }
 
 

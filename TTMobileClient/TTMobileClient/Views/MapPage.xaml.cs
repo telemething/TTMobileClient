@@ -555,8 +555,8 @@ namespace TTMobileClient.Views
 
         private PrefetchStatus _prefetchStatus = new PrefetchStatus();
         private WorldCoordinate _prefetchCenter = null;
-        private int _prefetchEdgeCount = 6;
-        private int _prefetchZoom = 12;
+        private int _prefetchEdgeCount = AppSettings.PrefetchEdgeCount;
+        private int _prefetchZoom = AppSettings.PrefetchZoom;
 
         public string _rosBridgeUri = AppSettings.DefaultRobotRosbridgeUrl;
         private double TestLat = AppSettings.DefaultGeoCoordsLat;

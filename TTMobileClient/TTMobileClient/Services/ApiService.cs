@@ -114,7 +114,16 @@ namespace TTMobileClient.Services
                 if (!_methodList.TryGetValue(req.MethodName, out MethodCallback method))
                     return new WebApiLib.Response(WebApiLib.ResultEnum.notfound, null, null);
 
-                return new WebApiLib.Response(WebApiLib.ResultEnum.ok, method.Invoke(req.Arguments), null);
+                var ret = method.Invoke(req.Arguments);
+
+                var resp = new WebApiLib.Response(WebApiLib.ResultEnum.ok, ret, null);
+
+                Console.WriteLine("---- GotMessageCallback() {0}", resp.GetStatsString());
+
+                return resp;
+
+
+                //return new WebApiLib.Response(WebApiLib.ResultEnum.ok, method.Invoke(req.Arguments), null);
             }
             catch (Exception ex)
             {

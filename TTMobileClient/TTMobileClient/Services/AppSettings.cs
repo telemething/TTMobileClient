@@ -39,7 +39,10 @@ namespace TTMobileClient
         public static int SelfTelemPeriodSeconds { get; } = 1;
         public static string WebApiUrl { get; } = "http://*:8877";
 
-        public static string BingMapAccessKey = "xxx";
+        //public static string BingMapAccessKey = "xxx";
+
+        public static int PrefetchEdgeCount { get; } = 9;
+        public static int PrefetchZoom { get; } = 18;
 
         public static string DefaultRobotRosbridgeUrl
         {

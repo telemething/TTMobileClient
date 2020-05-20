@@ -66,9 +66,16 @@ namespace TTMobileClient.Views
             this.Title = "Settings";
             var table = new TableView() { Intent = TableIntent.Settings };
             table.Root = new TableRoot();
+            string problemString = "";
 
             foreach (var settingsCollection in _portableAppSettings.AppSettingCollections)
             {
+                if (null == settingsCollection)
+                {
+                    problemString += "mull == settingsCollection, ";
+                    continue;
+                }
+
                 var section = new TableSection() { 
                     Title = settingsCollection.name, TextColor = Color.Turquoise };
                 table.Root.Add(section);
@@ -154,6 +161,11 @@ namespace TTMobileClient.Views
             var _wsApiTestTimer = 
                 new Timer((arg) => _areSettingsLoaded = true, new object(),
                     new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 0, -1));
+
+            if(1 < problemString.Length)
+                Xamarin.Forms.Device.BeginInvokeOnMainThread(
+                    () => App.Current.MainPage.DisplayAlert(
+                        "Problem", problemString, "Ok"));
         }
 
         ///********************************************************************
